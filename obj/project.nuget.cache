@@ -1,0 +1,11 @@
+{
+  "version": 2,
+  "dgSpecHash": "ygLJB1eQDrjuuysHgisvAHmUBbESOZQ03Q57hTVuhqlI11GrbDqPT2o8ktezjiUyvOHpk7NOyh4G3GL6iPsFyA==",
+  "success": true,
+  "projectFilePath": "D:\\repos\\wizard-lite\\wizard-lite.csproj",
+  "expectedPackageFiles": [
+    "C:\\Users\\jorda\\.nuget\\packages\\allegro\\5.2.7.1\\allegro.5.2.7.1.nupkg.sha512",
+    "C:\\Users\\jorda\\.nuget\\packages\\allegrodeps\\1.12.1\\allegrodeps.1.12.1.nupkg.sha512"
+  ],
+  "logs": []
+}
