@@ -1,5 +1,11 @@
 {
     "files.associations": {
-        "almngw32.h": "c"
+        "almngw32.h": "c",
+        "allegro_audio.h": "c",
+        "allegro_primitives.h": "c",
+        "allegro_native_dialog.h": "c",
+        "base.h": "c",
+        "allegro.h": "c",
+        "allegro_font.h": "c"
     }
 }

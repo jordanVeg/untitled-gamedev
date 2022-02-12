@@ -1,9 +1,11 @@
-#ALLEGRO_DIR := C:/Users/jorda/.nuget/packages/allegro/5.2.7.1/build/native
+#ALLEGRO_DIR := C:/msys/mingw64
 #INCLUDE_DIR := $(ALLEGRO_DIR)/include
-#LOAD_DIR := $(ALLEGRO_DIR)/v143/x64/lib
-#CFLAGS := -I$(INCLUDE_DIR) -Os -W
-#LDLIBS := -L$(LOAD_DIR) -lallegro-5 -lallegro_main-5 -lallegro_font-5
-CFLAGS+= -std=gnu99 `pkg-config --cflags allegro-5 allegro_main-5 allegro_font-5` -Os -W
-LDLIBS+=`pkg-config --libs allegro-5 allegro_main-5 allegro_font-5`
+#LOAD_DIR := $(ALLEGRO_DIR)/bin
+#CFLAGS := -std=gnu99 -Wall -g -I$(INCLUDE_DIR) -Os
+#LDLIBS := -L$(LOAD_DIR) -lallegro -lallegro_main -lallegro_font -lallegro_image -lallegro_audio
+CFLAGS+=-std=gnu99 -Wall -g `pkg-config --cflags allegro-5 allegro_main-5 allegro_font-5 allegro_image-5 allegro_audio-5 allegro_primitives-5 allegro_dialog-5` -Os
+LDLIBS+=`pkg-config --libs allegro-5 allegro_main-5 allegro_font-5 allegro_image-5 allegro_audio-5 allegro_primitives-5 allegro_dialog-5`
 CC:=gcc
-all: hello
+all: main
+clean:
+	rm *.exe
