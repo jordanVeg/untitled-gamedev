@@ -9,13 +9,16 @@
 #include <allegro5/allegro_image.h>         /* Allegro Image library */
 #include <allegro5/allegro_primitives.h>    /* Allegro Primatives library */
 
+#define KEY_SEEN     1
+#define KEY_RELEASED 2
+
 #define FPS 30.0
 #define SCREEN_WIDTH  640
 #define SCREEN_HEIGHT 480
 
 #define PLAYER_WIDTH 64
 #define PLAYER_HEIGHT 64
-#define PLAYER_SPEED 64
+#define PLAYER_SPEED 8
 
 typedef struct player
 {
@@ -53,31 +56,36 @@ int spawn_player(int start_x, int start_y, struct player* p)
     return 0;
 }
 
-void update_player(ALLEGRO_KEYBOARD_EVENT keyboard, struct player* p)
+void update_player(unsigned char key[], struct player* p)
 {
     /* Update speed based on Button press */
-    if(keyboard.keycode ==  ALLEGRO_KEY_W){
-        //p->vel_y = -p->speed;
-        p->pos_y -= p->speed;
+    if(key[ALLEGRO_KEY_W])
+    {
+        p->vel_y = -p->speed;
+        //p->pos_y -= p->speed;
     }
-    if(keyboard.keycode ==  ALLEGRO_KEY_S){
-        //p->vel_y = p->speed;
-        p->pos_y += p->speed;
+    if(key[ALLEGRO_KEY_S])
+    {
+        p->vel_y = p->speed;
+        //p->pos_y += p->speed;
     }
-    if(keyboard.keycode ==  ALLEGRO_KEY_A){
-        //p->vel_x = -p->speed;
-        p->pos_x -= p->speed;
+    if(key[ALLEGRO_KEY_A])
+    {
+        p->vel_x = -p->speed;
+        //p->pos_x -= p->speed;
     }
-    if(keyboard.keycode ==  ALLEGRO_KEY_D){
-        //p->vel_x = p->speed;
-        p->pos_x += p->speed;
+    if(key[ALLEGRO_KEY_D])
+    {
+        p->vel_x = p->speed;
+        //p->pos_x += p->speed;
     }
     /* Update position based on speed */
-    //p->pos_x += p->vel_x;
-    //p->pos_y += p->vel_y;
+    p->pos_x += p->vel_x;
+    p->pos_y += p->vel_y;
 
-    //p->vel_x = 0;
-    //p->vel_y = 0;
+    /* Reset velocity to 0, so that the player doesnt move forever */
+    p->vel_x = 0;
+    p->vel_y = 0;
 }
 
 void show_player(struct player* p)
@@ -130,10 +138,15 @@ int main(int argc, char** argv)
         printf("couldn't initialize font\n");
         return 1;
     }
+
+    /* Set up keyboard for fluid keyboard events */
+    unsigned char key[ALLEGRO_KEY_MAX];
+    memset(key, 0, sizeof(key));
     
     al_register_event_source(queue, al_get_keyboard_event_source());
     al_register_event_source(queue, al_get_display_event_source(disp));
     al_register_event_source(queue, al_get_timer_event_source(timer));
+
     /* Player Setup (hopefully) */
     Player p;
     int status = spawn_player(SCREEN_WIDTH/2 - PLAYER_WIDTH/2, SCREEN_HEIGHT/2 - PLAYER_HEIGHT/2, &p);
@@ -158,16 +171,24 @@ int main(int argc, char** argv)
         {
             case ALLEGRO_EVENT_TIMER:
                 // game logic goes here.
-                redraw = true;
-                break;
+                update_player(key, &p);
 
-            case ALLEGRO_EVENT_KEY_CHAR:
-                if(event.keyboard.keycode == ALLEGRO_KEY_ESCAPE)
+                if(key[ALLEGRO_KEY_ESCAPE])
                 {
                     done = true;
-                    break;
                 }
-                update_player(event.keyboard, &p);
+                for(int i = 0; i < ALLEGRO_KEY_MAX; i++)
+                {
+                    key[i] &= KEY_SEEN;
+                }
+
+                redraw = true;
+                break;
+            case ALLEGRO_EVENT_KEY_DOWN:
+                 key[event.keyboard.keycode] = KEY_SEEN | KEY_RELEASED;
+                 break;
+            case ALLEGRO_EVENT_KEY_UP:
+                key[event.keyboard.keycode] &= KEY_RELEASED;
                 break;
             case ALLEGRO_EVENT_DISPLAY_CLOSE:
                 done = true;
@@ -181,6 +202,7 @@ int main(int argc, char** argv)
         {
             al_draw_bitmap(forest, 0, 0, 0);
             show_player(&p);
+            al_draw_textf(font, al_map_rgb(0, 0, 0), 0, 0, 0, "Player position. x: %d, y: %d", p.pos_x, p.pos_y);
             al_flip_display();
 
             redraw = false;
