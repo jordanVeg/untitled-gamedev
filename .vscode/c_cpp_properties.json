@@ -15,7 +15,7 @@
             ],
             "windowsSdkVersion": "10.0.19041.0",
             "compilerPath": "C:/msys64/mingw64/bin/gcc",
-            "cStandard": "c17",
+            "cStandard": "gnu17",
             "cppStandard": "c++17",
             "intelliSenseMode": "gcc-x64"
         }
