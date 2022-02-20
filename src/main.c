@@ -13,8 +13,8 @@
 #define KEY_RELEASED 2
 
 #define FPS 30.0
-#define SCREEN_WIDTH  640
-#define SCREEN_HEIGHT 480
+#define SCREEN_WIDTH  1280
+#define SCREEN_HEIGHT 960
 
 #define PLAYER_WIDTH 64
 #define PLAYER_HEIGHT 64
@@ -47,7 +47,7 @@ typedef struct player {
     int vel_x;
     int vel_y;
     int speed;
-    STATE player_state; 
+    STATE player_state;
     ALLEGRO_BITMAP* sprite;
 /*
     void (*initialize)(struct player* p);
@@ -65,7 +65,7 @@ int spawn_player(int start_x, int start_y, struct player* p) {
     p->vel_y = 0;
     p->speed = PLAYER_SPEED;
     p->player_state = IDLE;
-    p->sprite = al_load_bitmap("assets/wizard.png");
+    p->sprite = al_load_bitmap("../assets/wizard.png");
     if(!p->sprite)
     {
         printf("Error loading player sprite!\n");
@@ -118,7 +118,7 @@ int generate_room(struct room* r) {
     r->width = 640;
     r->height = 480;
     r->num_doors  = 4;
-    r->map = al_load_bitmap("assets/Forest.jpg");
+    r->map = al_load_bitmap("../assets/forest_1.png");
     if(!r->map) {
         printf("couldn't load forest image.\n");
         return 1;
@@ -150,7 +150,7 @@ int main(int argc, char** argv) {
     if(!queue) {
         printf("couldn't initialize queue\n");
         return 1;
-    }    
+    }
 
     ALLEGRO_DISPLAY* disp = al_create_display(SCREEN_WIDTH, SCREEN_HEIGHT);
     if(!disp) {
@@ -167,7 +167,7 @@ int main(int argc, char** argv) {
     /* Set up keyboard for fluid keyboard events */
     unsigned char key[ALLEGRO_KEY_MAX];
     memset(key, 0, sizeof(key));
-    
+
     al_register_event_source(queue, al_get_keyboard_event_source());
     al_register_event_source(queue, al_get_display_event_source(disp));
     al_register_event_source(queue, al_get_timer_event_source(timer));
