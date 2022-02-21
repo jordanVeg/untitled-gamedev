@@ -12,7 +12,7 @@ Rogue-lite, but you're a wizard....who can write their own spells!
 - [x] Set up the basics
     - [x] Git Setup
     - [x] Allegro 5
-    - [x] C/C++ Compiler 
+    - [x] C/C++ Compiler
     - [x] Hello World!
 - [x] Let's get Started!
     - [x] Open a window
@@ -20,13 +20,16 @@ Rogue-lite, but you're a wizard....who can write their own spells!
 - [ ] Map
     - [x] Load image library
     - [x] Use default image as basic map
-    - [ ] Create 'rooms' that can link together
-    - [ ] Hardcode basic 3x3 map for exploration and testing
+    - [x] Create 'rooms' that can link together
+    - [x] Hardcode basic 3x3 map for exploration and testing
     - [ ] Room Generation
+    - [ ] Floor Generation
+      - [ ] Simple/Hardcoded
+      - [ ] Dynamic
 - [ ] Character Control
     - [x] Character Struct
     - [x] Basic Movement
-    - [ ] Refine Movement 
+    - [x] Refine Movement
     - [ ] Dash
     - [ ] Attack Action
 - [ ] Simple Enemy Creation
