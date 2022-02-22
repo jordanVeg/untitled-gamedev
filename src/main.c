@@ -2,6 +2,7 @@
 #include <stdio.h>
 #include <stdbool.h>
 #include <stdlib.h>
+//#include <math.h>
 
 /* Allegro Libraries */
 #include <allegro5/allegro5.h>              /* Base Allegro library */
@@ -16,19 +17,16 @@
 #define KEY_SEEN     1
 #define KEY_RELEASED 2
 
-#define FPS           30.0
+#define FPS           60.0
 #define SCREEN_WIDTH  1280
 #define SCREEN_HEIGHT 960
-
 
 #define PLAYER_WIDTH  64
 #define PLAYER_HEIGHT 64
 #define PLAYER_SPEED  16
 
-#define WEST  0
-#define EAST  1
-#define NORTH 2
-#define SOUTH 3
+#define DOOR_HEIGHT (2 * PLAYER_HEIGHT)
+#define DOOR_WIDTH  32
 
 int constrain(int min, int max, int val) {
     if(val <= min) {
@@ -60,13 +58,9 @@ typedef struct player {
     int speed;
     STATE player_state;
     ALLEGRO_BITMAP* sprite;
-/*
-    void (*initialize)(struct player* p);
-    void (*spawn)(int start_x, int start_y, struct player* p);
-    void (*update)(struct player* p);
-*/
 } Player;
-int initialize_player(struct player* p) {
+
+int initialize_player(Player* p) {
   p->pos_x = 0;
   p->pos_y = 0;
   p->width = PLAYER_WIDTH;
@@ -85,13 +79,13 @@ int initialize_player(struct player* p) {
   return OK;
 }
 
-int spawn_player(int start_x, int start_y, struct player* p) {
+int spawn_player(int start_x, int start_y, Player* p) {
     p->pos_x = start_x;
     p->pos_y = start_y;
     return OK;
 }
 
-void update_player(unsigned char key[], struct player* p) {
+void update_player(unsigned char key[], Player* p) {
     /* Update speed based on Button press */
     if(key[ALLEGRO_KEY_W]) {
         p->vel_y = -p->speed;
@@ -114,7 +108,7 @@ void update_player(unsigned char key[], struct player* p) {
     p->vel_y = 0;
 }
 
-void show_player(struct player* p) {
+void show_player(Player* p) {
     /* Draw player */
     al_draw_bitmap(p->sprite, p->pos_x, p->pos_y, 0);
 }
@@ -131,8 +125,10 @@ typedef struct room {
     int width, height, num_doors, id;
     char* path_to_map_image;
     ALLEGRO_BITMAP* map;
+    ALLEGRO_BITMAP* door;
     ROOM_TYPE type;
     bool is_initialized, is_loaded, is_spawnable;
+    /* door array: {north, south, east, west} */
 
     struct room* north;
     struct room* south;
@@ -140,7 +136,7 @@ typedef struct room {
     struct room* west;
 } Room;
 
-void generate_room(struct room* r, int ID, char* image_path) {
+void generate_room(Room* r, int ID, char* image_path) {
     r->width = SCREEN_WIDTH;
     r->height = SCREEN_HEIGHT;
     r->num_doors = 4;
@@ -157,15 +153,15 @@ void generate_room(struct room* r, int ID, char* image_path) {
     r->west = NULL;
 }
 
-int load_room(struct room* r) {
+int load_room(Room* r) {
   if(r->is_initialized && !r->is_loaded) {
     r->map = al_load_bitmap(r->path_to_map_image);
-    if(!r->map) {
+    r->door = al_load_bitmap("../assets/door.png");
+    if(!r->map || !r->door) {
         printf("couldn't load room map image.\n");
         return ERROR;
     }
     r->is_loaded = true;
-    printf("Room %i is loaded.\n",r->id);
     return OK;
   } else {
     printf("Room already loaded or not initialized.\n");
@@ -173,11 +169,11 @@ int load_room(struct room* r) {
   }
 }
 
-int unload_room(struct room* r) {
+int unload_room(Room* r) {
   if(r->is_loaded) {
     al_destroy_bitmap(r->map);
+    al_destroy_bitmap(r->door);
     r->is_loaded = false;
-    printf("Room %i is unloaded.\n",r->id);
     return OK;
   } else {
     printf("Room is not loaded, and cannot be unloaded.\n");
@@ -185,7 +181,8 @@ int unload_room(struct room* r) {
   }
 }
 
-struct room* change_rooms(struct room* current_room, struct player* p) {
+Room* change_rooms(Room* current_room, Player* p) {
+  /* TODO: implement exception handling via status */
   int status;
   if (p->pos_x == 0 && current_room->west) {
     status = load_room(current_room->west);
@@ -199,16 +196,12 @@ struct room* change_rooms(struct room* current_room, struct player* p) {
     return current_room->east;
   } else if (p->pos_y == 0 && current_room->north) {
     status = load_room(current_room->north);
-    printf("load Status: %i\n", status);
     status = unload_room(current_room);
-    printf("Unload Status: %i\n", status);
     spawn_player(p->pos_x, SCREEN_HEIGHT - PLAYER_HEIGHT - 1, p);
     return current_room->north;
   } else if (p->pos_y == SCREEN_HEIGHT - PLAYER_HEIGHT && current_room->south) {
     status = load_room(current_room->south);
-    printf("load Status: %i\n", status);
     status = unload_room(current_room);
-    printf("Unload Status: %i\n", status);
     spawn_player(p->pos_x, 1, p);
     return current_room->south;
   } else {
@@ -217,34 +210,30 @@ struct room* change_rooms(struct room* current_room, struct player* p) {
   }
 }
 
-void link_rooms(int dir, struct room* r1, struct room* r2) {
-  /*
-  * The idea here is to choose a direction in which to link the rooms. The
-  * direction is in reference to r1. I don't know if this is the permanent way I
-  * want to set this up, but it will (hopefully) do for now.
-  */
-  switch(dir){
-    case WEST:
-      r1->west = r2;
-      r2->east = r1;
-      break;
-    case EAST:
-      r1->east = r2;
-      r2->west = r1;
-      break;
-    case NORTH:
-      r1->north = r2;
-      r2->south = r1;
-      break;
-    case SOUTH:
-      r1->south = r2;
-      r2->north = r1;
-      break;
-  }
+void link_rooms(Room* ref, Room* north, Room* south, Room* east, Room* west) {
+  ref->north = north;
+  ref->south = south;
+  ref->east = east;
+  ref->west = west;
 }
 
-void show_room(struct room* r) {
+void show_room(Room* r) {
     al_draw_bitmap(r->map, 0, 0, 0);
+
+    /* draw doors of the room as well.. */
+    if(r->west != NULL) {
+      al_draw_bitmap(r->door, 0, SCREEN_HEIGHT/2 - DOOR_HEIGHT/2, 0);
+    }
+    if(r->east != NULL) {
+      al_draw_bitmap(r->door, SCREEN_WIDTH - DOOR_WIDTH, SCREEN_HEIGHT/2 - DOOR_HEIGHT/2, ALLEGRO_FLIP_HORIZONTAL);
+    }
+    if(r->north != NULL) {
+      al_draw_rotated_bitmap(r->door, 0, DOOR_HEIGHT/2, SCREEN_WIDTH/2, 0, ALLEGRO_PI/2, 0);
+    }
+    if(r->south != NULL) {
+      al_draw_rotated_bitmap(r->door, 0, DOOR_HEIGHT/2, SCREEN_WIDTH/2, SCREEN_HEIGHT - DOOR_WIDTH, ALLEGRO_PI/2, ALLEGRO_FLIP_HORIZONTAL);
+    }
+
 }
 
 bool show_dev_tools = false;
@@ -298,6 +287,7 @@ int main(int argc, char** argv) {
     /* Room functionality testing */
     Room r1, r2, r3, r4, r5, r6, r7, r8, r9;
     Room* current_room;
+    /* Generate all the rooms on the floor */
     generate_room(&r1, 1, "../assets/forest_1.png");
     generate_room(&r2, 2, "../assets/forest_2.png");
     generate_room(&r3, 3, "../assets/forest_3.png");
@@ -308,27 +298,23 @@ int main(int argc, char** argv) {
     generate_room(&r8, 8, "../assets/forest_8.png");
     generate_room(&r9, 9, "../assets/forest_9.png");
 
-    link_rooms(WEST, &r1, &r2);
-    link_rooms(NORTH, &r1, &r3);
-    link_rooms(SOUTH, &r1, &r4);
-    link_rooms(EAST, &r1, &r5);
-    link_rooms(NORTH, &r2, &r6);
-    link_rooms(SOUTH, &r2, &r7);
-    link_rooms(WEST, &r3, &r6);
-    link_rooms(EAST, &r3, &r8);
-    link_rooms(NORTH, &r5, &r8);
-    link_rooms(SOUTH, &r5, &r9);
-    link_rooms(WEST, &r4, &r7);
-    link_rooms(EAST, &r4, &r9);
+    /* Link all the rooms together */
+    link_rooms(&r1, &r3, &r4, &r5, &r2);
+    link_rooms(&r2, &r6, &r7, &r1, NULL);
+    link_rooms(&r3, NULL, &r1, &r8, &r6);
+    link_rooms(&r4, &r1, NULL, &r9, &r7);
+    link_rooms(&r5, &r8, &r9, NULL, &r1);
+    link_rooms(&r6, NULL, &r2, &r3, NULL);
+    link_rooms(&r7, &r2, NULL, &r4, NULL);
+    link_rooms(&r8, NULL, &r5, NULL, &r3);
+    link_rooms(&r9, &r5, NULL, NULL, &r4);
 
     current_room = &r1;
     status += load_room(current_room);
-    printf("Room pointer status: N %i, S %i, W %i, E %i.\n",r1.north->id, r1.south->id, r1.west->id, r1.east->id);
     if(status != OK) {
-        printf("an Error has occured. Exiting...");
+        printf("an error has occured. Exiting...");
         return ERROR;
     }
-
 
     /* Game Loop */
     bool done = false;
@@ -345,13 +331,12 @@ int main(int argc, char** argv) {
                 update_player(key, &p);
                 if(p.pos_x == 0 || p.pos_x == SCREEN_WIDTH - PLAYER_WIDTH || p.pos_y == 0 || p.pos_y == SCREEN_HEIGHT - PLAYER_HEIGHT) {
                   current_room = change_rooms(current_room, &p);
-                  printf("current room ID: %i\n", current_room->id);
                 }
                 if(key[ALLEGRO_KEY_ESCAPE]) {
                     done = true;
                 }
                 if(key[ALLEGRO_KEY_T]) {
-                  show_dev_tools = !show_dev_tools;
+                  show_dev_tools = true;
                 }
                 for(int i = 0; i < ALLEGRO_KEY_MAX; i++) {
                     key[i] &= KEY_SEEN;

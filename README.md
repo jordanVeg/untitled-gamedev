@@ -40,11 +40,15 @@ Rogue-lite, but you're a wizard....who can write their own spells!
 - [ ] Music & Sound
 
 ## Development Environment
-### Environment:
+### Windows Environment:
 * OS              -   WINDOWS 10
 * c/c++ compiler  -   Mingw64
 * make            -   MSYS2
 * Editor          -   Visual Studio Code
+### Apple Environment:
+* OS              -   macOS Catalina 10.15.7
+* c/c++ compiler  -   gcc
+* Editor          -   Atom
 
 ### Libraries:
 * Allegro 5 version 5.2.7.0
