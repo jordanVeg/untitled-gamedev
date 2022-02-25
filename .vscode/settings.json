@@ -6,6 +6,7 @@
         "allegro_native_dialog.h": "c",
         "base.h": "c",
         "allegro.h": "c",
-        "allegro_font.h": "c"
+        "allegro_font.h": "c",
+        "collisions.h": "c"
     }
 }

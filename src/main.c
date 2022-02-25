@@ -10,6 +10,8 @@
 #include <allegro5/allegro_image.h>         /* Allegro Image library */
 #include <allegro5/allegro_primitives.h>    /* Allegro Primatives library */
 
+/* local Libraries */
+#include "collisions.h"
 
 #define OK     0
 #define ERROR -1
@@ -233,7 +235,6 @@ void show_room(Room* r) {
     if(r->south != NULL) {
       al_draw_rotated_bitmap(r->door, 0, DOOR_HEIGHT/2, SCREEN_WIDTH/2, SCREEN_HEIGHT - DOOR_WIDTH, ALLEGRO_PI/2, ALLEGRO_FLIP_HORIZONTAL);
     }
-
 }
 
 bool show_dev_tools = false;
@@ -308,7 +309,9 @@ int main(int argc, char** argv) {
     link_rooms(&r7, &r2, NULL, &r4, NULL);
     link_rooms(&r8, NULL, &r5, NULL, &r3);
     link_rooms(&r9, &r5, NULL, NULL, &r4);
-
+    /* Testing out creating a hitbox */
+    Hitbox hb;
+    create_hitbox(&hb, 0, 0, PLAYER_WIDTH, PLAYER_HEIGHT);
     current_room = &r1;
     status += load_room(current_room);
     if(status != OK) {

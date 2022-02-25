@@ -1,17 +1,34 @@
 #include <stdbool.h>
 #include <stdlib.h>
 
+#include "collisions.h"
 
-bool is_collision(int x1, int y1, int w1, int h1, int x2, int y2, int w2, int h2) {
-  int px1 = x1;
-  int pxw1 = x1 + w1;
-  int py1 = y1;
-  int pyh1 = y1 + h1;
+void create_hitbox(Hitbox* hb, int x, int y, int width, int height) {
+  hb->px     = x;
+  hb->py     = y;
+  hb->width  = width;
+  hb->height = height;
+}
 
-  int px2 = x2;
-  int pxw2 = x2 + w2;
-  int py1 = y2;
-  int pyh1 = y2 + h2;
+void update_hitbox_position(Hitbox* hb, int new_pos_x, int new_pos_y) {
+  hb->px = new_pos_x;
+  hb->py = new_pos_y;
+}
 
-  return (px1 <= pxw2 && px1 >= px2) && (py1 <= pyh2 && py1 >= py2 );
+bool is_collision(Hitbox* hb1, Hitbox* hb2) {
+  int left_1_x   = hb1->px;
+  int right_1_x  = hb1->px + hb1->width;
+  int top_1_y    = hb1->py;
+  int bottom_1_y = hb1->py + hb1->height;
+  int left_2_x   = hb2->px;
+  int right_2_x  = hb2->px + hb2->width;
+  int top_2_y    = hb2->py;
+  int bottom_2_y = hb2->py + hb2->height;
+
+  bool x1_in_range = (left_1_x >= left_2_x && left_1_x <= right_2_x);
+  bool y1_in_range = (top_1_y >= top_2_y && top_1_y <= bottom_2_y); 
+  bool x2_in_range = (left_2_x >= left_1_x && left_2_x <= right_1_x);
+  bool y2_in_range = (top_2_y >= top_1_y && top_2_y <= bottom_1_y);
+
+  return (x1_in_range && y1_in_range) || (x2_in_range && y2_in_range); 
 }
