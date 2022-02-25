@@ -1,9 +1,11 @@
+#include "collisions.h" 
+
+#ifndef INCLUDE_PLAYER_H
+  #define INCLUDE_PLAYER_H
 
 #define PLAYER_WIDTH  64
 #define PLAYER_HEIGHT 64
 #define PLAYER_SPEED  16
-#define OK     0
-#define ERROR -1
 
 /* Should help support animations later on */
 typedef enum {
@@ -13,7 +15,7 @@ typedef enum {
     HIT,
     DEAD
 } STATE;
-/* Player code, to be moved into it's own area */
+
 typedef struct player {
     int pos_x;
     int pos_y;
@@ -22,6 +24,7 @@ typedef struct player {
     int vel_x;
     int vel_y;
     int speed;
+    Hitbox hb;
     STATE player_state;
     ALLEGRO_BITMAP* sprite;
 } Player;
@@ -30,6 +33,8 @@ int initialize_player(Player* p);
 
 int spawn_player(int start_x, int start_y, Player* p);
 
-void update_player(unsigned char key[], struct player* p);
+void update_player(unsigned char key[], Player* p);
 
-void show_player(struct player* p);
+void show_player(Player* p);
+
+#endif

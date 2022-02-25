@@ -2,7 +2,6 @@
 #include <stdio.h>
 #include <stdbool.h>
 #include <stdlib.h>
-//#include <math.h>
 
 /* Allegro Libraries */
 #include <allegro5/allegro5.h>              /* Base Allegro library */
@@ -13,17 +12,12 @@
 /* local Libraries */
 #include "collisions.h"
 #include "player.h"
+#include "global.h"
 
 #define KEY_SEEN     1
 #define KEY_RELEASED 2
 
 #define FPS           60.0
-#define SCREEN_WIDTH  1280
-#define SCREEN_HEIGHT 960
-
-#define PLAYER_WIDTH  64
-#define PLAYER_HEIGHT 64
-#define PLAYER_SPEED  16
 
 #define DOOR_HEIGHT (2 * PLAYER_HEIGHT)
 #define DOOR_WIDTH  32
@@ -44,7 +38,13 @@ typedef struct room {
     ALLEGRO_BITMAP* door;
     ROOM_TYPE type;
     bool is_initialized, is_loaded, is_spawnable;
-    /* door array: {north, south, east, west} */
+    /* 
+    * I want to implement the doors in the following way: 
+    * door array: {north, south, east, west}, I dont think it makes
+    * much sense to create door hitboxes that dont actually exist...
+    */
+    
+    Hitbox north_door, south_door, east_door, west_door;
 
     struct room* north;
     struct room* south;
@@ -62,6 +62,16 @@ void generate_room(Room* r, int ID, char* image_path) {
     r->id = ID;
     r->path_to_map_image = image_path;
     r->is_initialized = true;
+/*
+    r->north_door = NULL;
+    r->south_door = NULL;
+    r->east_door = NULL;
+    r->west_door = NULL;
+*/
+    create_hitbox(&r->north_door, 0, 0, 0, 0);
+    create_hitbox(&r->south_door, 0, 0, 0, 0);
+    create_hitbox(&r->east_door, 0, 0, 0, 0);
+    create_hitbox(&r->west_door, 0, 0, 0, 0);
 
     r->north = NULL;
     r->south = NULL;
@@ -103,26 +113,30 @@ Room* change_rooms(Room* current_room, Player* p) {
   if (p->pos_x == 0 && current_room->west) {
     status = load_room(current_room->west);
     status = unload_room(current_room);
-    spawn_player(SCREEN_WIDTH-PLAYER_WIDTH-1, p->pos_y, p);
+    spawn_player(SCREEN_WIDTH-DOOR_WIDTH-1, p->pos_y, p);
     return current_room->west;
-  } else if (p->pos_x == SCREEN_WIDTH - PLAYER_WIDTH && current_room->east) {
+  } 
+  else if (p->pos_x == SCREEN_WIDTH - PLAYER_WIDTH && current_room->east) {
     status = load_room(current_room->east);
     status = unload_room(current_room);
     spawn_player(1, p->pos_y, p);
     return current_room->east;
-  } else if (p->pos_y == 0 && current_room->north) {
+  } 
+  else if (p->pos_y == 0 && current_room->north) {
     status = load_room(current_room->north);
     status = unload_room(current_room);
     spawn_player(p->pos_x, SCREEN_HEIGHT - PLAYER_HEIGHT - 1, p);
     return current_room->north;
-  } else if (p->pos_y == SCREEN_HEIGHT - PLAYER_HEIGHT && current_room->south) {
+  }
+  else if (p->pos_y == SCREEN_HEIGHT - PLAYER_HEIGHT && current_room->south) {
     status = load_room(current_room->south);
     status = unload_room(current_room);
     spawn_player(p->pos_x, 1, p);
     return current_room->south;
-  } else {
-      printf("Nowhere to go\n");
-      return current_room;
+  }
+  else {
+    printf("Nowhere to go\n");
+    return current_room;
   }
 }
 
@@ -131,24 +145,38 @@ void link_rooms(Room* ref, Room* north, Room* south, Room* east, Room* west) {
   ref->south = south;
   ref->east = east;
   ref->west = west;
+
+  if(ref->west != NULL) {
+    create_hitbox(&ref->west_door, 0, SCREEN_HEIGHT/2 - DOOR_HEIGHT/2, DOOR_WIDTH, DOOR_HEIGHT);
+  }
+  if(ref->east != NULL) {
+    create_hitbox(&ref->east_door, SCREEN_WIDTH - DOOR_WIDTH, SCREEN_HEIGHT/2 - DOOR_HEIGHT/2, DOOR_WIDTH, DOOR_HEIGHT);
+  }
+  if(ref->north != NULL) {
+    create_hitbox(&ref->north_door, SCREEN_WIDTH/2 - DOOR_HEIGHT/2, 0, DOOR_HEIGHT, DOOR_WIDTH);
+  }
+  if(ref->south != NULL) {
+    create_hitbox(&ref->south_door, SCREEN_WIDTH/2 - DOOR_HEIGHT/2, SCREEN_HEIGHT - DOOR_WIDTH, DOOR_HEIGHT, DOOR_WIDTH);
+  } 
+
 }
 
 void show_room(Room* r) {
-    al_draw_bitmap(r->map, 0, 0, 0);
+  al_draw_bitmap(r->map, 0, 0, 0);
 
-    /* draw doors of the room as well.. */
-    if(r->west != NULL) {
-      al_draw_bitmap(r->door, 0, SCREEN_HEIGHT/2 - DOOR_HEIGHT/2, 0);
-    }
-    if(r->east != NULL) {
-      al_draw_bitmap(r->door, SCREEN_WIDTH - DOOR_WIDTH, SCREEN_HEIGHT/2 - DOOR_HEIGHT/2, ALLEGRO_FLIP_HORIZONTAL);
-    }
-    if(r->north != NULL) {
-      al_draw_rotated_bitmap(r->door, 0, DOOR_HEIGHT/2, SCREEN_WIDTH/2, 0, ALLEGRO_PI/2, 0);
-    }
-    if(r->south != NULL) {
-      al_draw_rotated_bitmap(r->door, 0, DOOR_HEIGHT/2, SCREEN_WIDTH/2, SCREEN_HEIGHT - DOOR_WIDTH, ALLEGRO_PI/2, ALLEGRO_FLIP_HORIZONTAL);
-    }
+  /* draw doors of the room as well.. */
+  if(r->north != NULL) {
+    al_draw_rotated_bitmap(r->door, 0, DOOR_HEIGHT/2, SCREEN_WIDTH/2, 0, ALLEGRO_PI/2, 0);
+  }
+  if(r->south != NULL) {
+    al_draw_rotated_bitmap(r->door, 0, DOOR_HEIGHT/2, SCREEN_WIDTH/2, SCREEN_HEIGHT - DOOR_WIDTH, ALLEGRO_PI/2, ALLEGRO_FLIP_HORIZONTAL);
+  }
+  if(r->east != NULL) {
+    al_draw_bitmap(r->door, SCREEN_WIDTH - DOOR_WIDTH, SCREEN_HEIGHT/2 - DOOR_HEIGHT/2, ALLEGRO_FLIP_HORIZONTAL);
+  }
+  if(r->west != NULL) {
+    al_draw_bitmap(r->door, 0, SCREEN_HEIGHT/2 - DOOR_HEIGHT/2, 0);
+  }
 }
 
 bool show_dev_tools = false;
@@ -224,15 +252,15 @@ int main(int argc, char** argv) {
     link_rooms(&r8, NULL, &r5, NULL, &r3);
     link_rooms(&r9, &r5, NULL, NULL, &r4);
     /* Testing out creating a hitbox */
-    Hitbox hb;
-    create_hitbox(&hb, 0, 0, PLAYER_WIDTH, PLAYER_HEIGHT);
     current_room = &r1;
     status += load_room(current_room);
     if(status != OK) {
         printf("an error has occured. Exiting...");
         return ERROR;
     }
-
+    /* Hitbox testing */
+    Hitbox new_hb;
+    create_hitbox(&new_hb,  SCREEN_WIDTH/2 - DOOR_HEIGHT/2, SCREEN_HEIGHT - DOOR_WIDTH, DOOR_HEIGHT, DOOR_WIDTH);
     /* Game Loop */
     bool done = false;
     bool redraw = true;
@@ -246,7 +274,13 @@ int main(int argc, char** argv) {
             case ALLEGRO_EVENT_TIMER:
                 // game logic goes here.
                 update_player(key, &p);
-                if(p.pos_x == 0 || p.pos_x == SCREEN_WIDTH - PLAYER_WIDTH || p.pos_y == 0 || p.pos_y == SCREEN_HEIGHT - PLAYER_HEIGHT) {
+                if(is_collision(&p.hb, &new_hb)) {
+                  printf("COLLISION DETECTED!\n");
+                }
+                if(is_collision(&p.hb, &current_room->north_door) || 
+                   is_collision(&p.hb, &current_room->south_door) || 
+                   is_collision(&p.hb, &current_room->east_door) ||
+                   is_collision(&p.hb, &current_room->west_door)) {
                   current_room = change_rooms(current_room, &p);
                 }
                 if(key[ALLEGRO_KEY_ESCAPE]) {
@@ -277,6 +311,7 @@ int main(int argc, char** argv) {
 
         if(redraw && al_is_event_queue_empty(queue)) {
             show_room(current_room);
+            al_draw_rectangle(new_hb.px, new_hb.py, new_hb.px + new_hb.width, new_hb.py + new_hb.height, al_map_rgb(0, 0, 0), 10 );
             show_player(&p);
             if(show_dev_tools) {
               al_draw_textf(font, al_map_rgb(0, 0, 0), 0, 0, 0, "Player position. x: %d, y: %d", p.pos_x, p.pos_y);

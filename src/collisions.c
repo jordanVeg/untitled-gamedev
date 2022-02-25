@@ -16,6 +16,11 @@ void update_hitbox_position(Hitbox* hb, int new_pos_x, int new_pos_y) {
 }
 
 bool is_collision(Hitbox* hb1, Hitbox* hb2) {
+  /*
+  * This needs to be tweaked. It doesnt detect collisions if the top left
+  * of either structures arent touching. Not quite sure how to fix it yet,
+  * but it definitely needs to be done. 
+  */
   int left_1_x   = hb1->px;
   int right_1_x  = hb1->px + hb1->width;
   int top_1_y    = hb1->py;
