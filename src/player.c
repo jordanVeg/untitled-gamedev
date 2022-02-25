@@ -1,4 +1,5 @@
 #include <stdlib.h>
+#include <stdio.h>
 #include <allegro5/allegro5.h>              /* Base Allegro library */
 #include <allegro5/allegro_image.h>         /* Allegro Image library */
 #include "player.h"
@@ -16,26 +17,32 @@ int constrain(int min, int max, int val) {
     }
 }
 
-int spawn_player(int start_x, int start_y, struct player* p) {
-    p->pos_x = start_x;
-    p->pos_y = start_y;
-    p->width = PLAYER_WIDTH;
-    p->height = PLAYER_HEIGHT;
-    p->vel_x = 0;
-    p->vel_y = 0;
-    p->speed = PLAYER_SPEED;
-    p->player_state = IDLE;
-    p->sprite = al_load_bitmap("../assets/wizard.png");
-    if(!p->sprite)
-    {
-        printf("Error loading player sprite!\n");
-        return 1;
-    }
+int initialize_player(Player* p) {
+  p->pos_x = 0;
+  p->pos_y = 0;
+  p->width = PLAYER_WIDTH;
+  p->height = PLAYER_HEIGHT;
+  p->vel_x = 0;
+  p->vel_y = 0;
+  p->speed = PLAYER_SPEED;
+  p->player_state = IDLE;
+  p->sprite = al_load_bitmap("../assets/wizard.png");
+  if(!p->sprite)
+  {
+      printf("Error loading player sprite!\n");
+      return ERROR;
+  }
 
-    return 0;
+  return OK;
 }
 
-void update_player(unsigned char key[], struct player* p) {
+int spawn_player(int start_x, int start_y, Player* p) {
+    p->pos_x = start_x;
+    p->pos_y = start_y;
+    return OK;
+}
+
+void update_player(unsigned char key[], Player* p) {
     /* Update speed based on Button press */
     if(key[ALLEGRO_KEY_W]) {
         p->vel_y = -p->speed;

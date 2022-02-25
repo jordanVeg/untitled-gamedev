@@ -12,9 +12,7 @@
 
 /* local Libraries */
 #include "collisions.h"
-
-#define OK     0
-#define ERROR -1
+#include "player.h"
 
 #define KEY_SEEN     1
 #define KEY_RELEASED 2
@@ -30,90 +28,6 @@
 #define DOOR_HEIGHT (2 * PLAYER_HEIGHT)
 #define DOOR_WIDTH  32
 
-int constrain(int min, int max, int val) {
-    if(val <= min) {
-        return min;
-    } else if (val >= max) {
-        return max;
-    } else {
-        return val;
-    }
-}
-
-/* Should help support animations later on */
-typedef enum {
-    IDLE,
-    RUNNING,
-    DASH,
-    HIT,
-    DEAD
-} STATE;
-
-/* Player code, to be moved into it's own area */
-typedef struct player {
-    int pos_x;
-    int pos_y;
-    int width;
-    int height;
-    int vel_x;
-    int vel_y;
-    int speed;
-    STATE player_state;
-    ALLEGRO_BITMAP* sprite;
-} Player;
-
-int initialize_player(Player* p) {
-  p->pos_x = 0;
-  p->pos_y = 0;
-  p->width = PLAYER_WIDTH;
-  p->height = PLAYER_HEIGHT;
-  p->vel_x = 0;
-  p->vel_y = 0;
-  p->speed = PLAYER_SPEED;
-  p->player_state = IDLE;
-  p->sprite = al_load_bitmap("../assets/wizard.png");
-  if(!p->sprite)
-  {
-      printf("Error loading player sprite!\n");
-      return ERROR;
-  }
-
-  return OK;
-}
-
-int spawn_player(int start_x, int start_y, Player* p) {
-    p->pos_x = start_x;
-    p->pos_y = start_y;
-    return OK;
-}
-
-void update_player(unsigned char key[], Player* p) {
-    /* Update speed based on Button press */
-    if(key[ALLEGRO_KEY_W]) {
-        p->vel_y = -p->speed;
-    }
-    if(key[ALLEGRO_KEY_S]) {
-        p->vel_y = p->speed;
-    }
-    if(key[ALLEGRO_KEY_A]) {
-        p->vel_x = -p->speed;
-    }
-    if(key[ALLEGRO_KEY_D]) {
-        p->vel_x = p->speed;
-    }
-    /* Update position based on speed */
-    p->pos_x = constrain(0, SCREEN_WIDTH - PLAYER_WIDTH, (p->pos_x + p->vel_x));
-    p->pos_y = constrain(0, SCREEN_HEIGHT - PLAYER_HEIGHT,(p->pos_y + p->vel_y));
-
-    /* Reset velocity to 0, so that the player doesnt move forever */
-    p->vel_x = 0;
-    p->vel_y = 0;
-}
-
-void show_player(Player* p) {
-    /* Draw player */
-    al_draw_bitmap(p->sprite, p->pos_x, p->pos_y, 0);
-}
 typedef enum {
   BASIC,
   KEY,

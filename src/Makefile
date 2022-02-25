@@ -3,8 +3,8 @@ CFLAGS+=-std=gnu99 -Wall -g `pkg-config --cflags allegro-5 allegro_main-5 allegr
 LDLIBS+=`pkg-config --libs allegro-5 allegro_main-5 allegro_font-5 allegro_image-5 allegro_primitives-5`
 CC:=gcc
 
-DEPS = collisions.h
-OBJS = main.o collisions.o
+DEPS = collisions.h player.h
+OBJS = main.o collisions.o player.o
 
 %.o: %.c $(DEPS)
 	$(CC) -c -o $@ $< $(CFLAGS) $(LDLIBS)

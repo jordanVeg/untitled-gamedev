@@ -51,5 +51,8 @@ Module.symvers
 Mkfile.old
 dkms.conf
 
+# Compiled Objects
+*.o
+
 # MISC
 *.log

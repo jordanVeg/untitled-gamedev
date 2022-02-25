@@ -1,10 +1,9 @@
-#include <stdlib.h>
-#include <allegro5/allegro5.h>              /* Base Allegro library */
-#include <allegro5/allegro_image.h>         /* Allegro Image library */
 
 #define PLAYER_WIDTH  64
 #define PLAYER_HEIGHT 64
-#define PLAYER_SPEED  8
+#define PLAYER_SPEED  16
+#define OK     0
+#define ERROR -1
 
 /* Should help support animations later on */
 typedef enum {
@@ -25,14 +24,11 @@ typedef struct player {
     int speed;
     STATE player_state;
     ALLEGRO_BITMAP* sprite;
-/*
-    void (*initialize)(struct player* p);
-    void (*spawn)(int start_x, int start_y, struct player* p);
-    void (*update)(struct player* p);
-*/
 } Player;
 
-int spawn_player(int start_x, int start_y, struct player* p);
+int initialize_player(Player* p);
+
+int spawn_player(int start_x, int start_y, Player* p);
 
 void update_player(unsigned char key[], struct player* p);
 
