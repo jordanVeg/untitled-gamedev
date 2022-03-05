@@ -38,12 +38,12 @@ typedef struct room {
     ALLEGRO_BITMAP* door;
     ROOM_TYPE type;
     bool is_initialized, is_loaded, is_spawnable;
-    /* 
-    * I want to implement the doors in the following way: 
+    /*
+    * I want to implement the doors in the following way:
     * door array: {north, south, east, west}, I dont think it makes
     * much sense to create door hitboxes that dont actually exist...
     */
-    
+
     Hitbox north_door, south_door, east_door, west_door;
 
     struct room* north;
@@ -110,28 +110,28 @@ int unload_room(Room* r) {
 Room* change_rooms(Room* current_room, Player* p) {
   /* TODO: implement exception handling via status */
   int status;
-  if (p->pos_x == 0 && current_room->west) {
+  if (is_collision(&p->hb, &current_room->west_door) && current_room->west) {
     status = load_room(current_room->west);
     status = unload_room(current_room);
-    spawn_player(SCREEN_WIDTH-DOOR_WIDTH-1, p->pos_y, p);
+    spawn_player(SCREEN_WIDTH-DOOR_WIDTH-PLAYER_WIDTH-1, p->pos_y, p);
     return current_room->west;
-  } 
-  else if (p->pos_x == SCREEN_WIDTH - PLAYER_WIDTH && current_room->east) {
+  }
+  else if (is_collision(&p->hb, &current_room->east_door) && current_room->east) {
     status = load_room(current_room->east);
     status = unload_room(current_room);
-    spawn_player(1, p->pos_y, p);
+    spawn_player(1 + DOOR_WIDTH, p->pos_y, p);
     return current_room->east;
-  } 
-  else if (p->pos_y == 0 && current_room->north) {
+  }
+  else if (is_collision(&p->hb, &current_room->north_door) && current_room->north) {
     status = load_room(current_room->north);
     status = unload_room(current_room);
-    spawn_player(p->pos_x, SCREEN_HEIGHT - PLAYER_HEIGHT - 1, p);
+    spawn_player(p->pos_x, SCREEN_HEIGHT - PLAYER_HEIGHT - DOOR_WIDTH - 1, p);
     return current_room->north;
   }
-  else if (p->pos_y == SCREEN_HEIGHT - PLAYER_HEIGHT && current_room->south) {
+  else if (is_collision(&p->hb, &current_room->south_door)&& current_room->south) {
     status = load_room(current_room->south);
     status = unload_room(current_room);
-    spawn_player(p->pos_x, 1, p);
+    spawn_player(p->pos_x, DOOR_WIDTH + 1, p);
     return current_room->south;
   }
   else {
@@ -157,7 +157,7 @@ void link_rooms(Room* ref, Room* north, Room* south, Room* east, Room* west) {
   }
   if(ref->south != NULL) {
     create_hitbox(&ref->south_door, SCREEN_WIDTH/2 - DOOR_HEIGHT/2, SCREEN_HEIGHT - DOOR_WIDTH, DOOR_HEIGHT, DOOR_WIDTH);
-  } 
+  }
 
 }
 
@@ -274,11 +274,13 @@ int main(int argc, char** argv) {
             case ALLEGRO_EVENT_TIMER:
                 // game logic goes here.
                 update_player(key, &p);
+                /*
                 if(is_collision(&p.hb, &new_hb)) {
                   printf("COLLISION DETECTED!\n");
                 }
-                if(is_collision(&p.hb, &current_room->north_door) || 
-                   is_collision(&p.hb, &current_room->south_door) || 
+                */
+                if(is_collision(&p.hb, &current_room->north_door) ||
+                   is_collision(&p.hb, &current_room->south_door) ||
                    is_collision(&p.hb, &current_room->east_door) ||
                    is_collision(&p.hb, &current_room->west_door)) {
                   current_room = change_rooms(current_room, &p);
@@ -311,7 +313,7 @@ int main(int argc, char** argv) {
 
         if(redraw && al_is_event_queue_empty(queue)) {
             show_room(current_room);
-            al_draw_rectangle(new_hb.px, new_hb.py, new_hb.px + new_hb.width, new_hb.py + new_hb.height, al_map_rgb(0, 0, 0), 10 );
+            //al_draw_rectangle(new_hb.px, new_hb.py, new_hb.px + new_hb.width, new_hb.py + new_hb.height, al_map_rgb(0, 0, 0), 10 );
             show_player(&p);
             if(show_dev_tools) {
               al_draw_textf(font, al_map_rgb(0, 0, 0), 0, 0, 0, "Player position. x: %d, y: %d", p.pos_x, p.pos_y);
