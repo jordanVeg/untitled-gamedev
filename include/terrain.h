@@ -8,6 +8,11 @@
 #define DOOR_HEIGHT (2 * PLAYER_HEIGHT)
 #define DOOR_WIDTH  32
 
+#define NUM_ROWS 3
+#define NUM_COLS 3
+
+extern int floor_num;
+
 typedef enum {
   BASIC,
   KEY,
@@ -49,5 +54,6 @@ void link_rooms(Room* ref, Room* north, Room* south, Room* east, Room* west);
 
 void show_room(Room* r);
 
+Room** generate_floor(int rows, int cols);
 
 #endif

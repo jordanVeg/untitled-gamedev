@@ -68,32 +68,12 @@ int main(int argc, char** argv) {
     int status = initialize_player(&p);
     status += spawn_player(SCREEN_WIDTH/2 - PLAYER_WIDTH/2, SCREEN_HEIGHT/2 - PLAYER_HEIGHT/2, &p);
 
-    /* Room functionality testing */
-    Room r1, r2, r3, r4, r5, r6, r7, r8, r9;
     Room* current_room;
-    /* Generate all the rooms on the floor */
-    generate_room(&r1, 1, "../assets/forest_1.png");
-    generate_room(&r2, 2, "../assets/forest_2.png");
-    generate_room(&r3, 3, "../assets/forest_3.png");
-    generate_room(&r4, 4, "../assets/forest_4.png");
-    generate_room(&r5, 5, "../assets/forest_5.png");
-    generate_room(&r6, 6, "../assets/forest_6.png");
-    generate_room(&r7, 7, "../assets/forest_7.png");
-    generate_room(&r8, 8, "../assets/forest_8.png");
-    generate_room(&r9, 9, "../assets/forest_9.png");
-
-    /* Link all the rooms together */
-    link_rooms(&r1, &r3, &r4, &r5, &r2);
-    link_rooms(&r2, &r6, &r7, &r1, NULL);
-    link_rooms(&r3, NULL, &r1, &r8, &r6);
-    link_rooms(&r4, &r1, NULL, &r9, &r7);
-    link_rooms(&r5, &r8, &r9, NULL, &r1);
-    link_rooms(&r6, NULL, &r2, &r3, NULL);
-    link_rooms(&r7, &r2, NULL, &r4, NULL);
-    link_rooms(&r8, NULL, &r5, NULL, &r3);
-    link_rooms(&r9, &r5, NULL, NULL, &r4);
+    Room** Floor;
+    Floor = malloc(NUM_ROWS * NUM_COLS * sizeof(**Floor));
+    Floor = generate_floor(NUM_ROWS, NUM_COLS);
     /* Testing out creating a hitbox */
-    current_room = &r1;
+    current_room = &Floor[1][1];
     status += load_room(current_room);
     if(status != OK) {
         printf("an error has occured. Exiting...");
@@ -102,6 +82,7 @@ int main(int argc, char** argv) {
     /* Hitbox testing */
     Hitbox new_hb;
     create_hitbox(&new_hb,  SCREEN_WIDTH/2 - DOOR_HEIGHT/2, SCREEN_HEIGHT - DOOR_WIDTH, DOOR_HEIGHT, DOOR_WIDTH);
+
     /* Game Loop */
     bool done = false;
     bool redraw = true;

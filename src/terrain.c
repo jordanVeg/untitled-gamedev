@@ -135,3 +135,43 @@ void show_room(Room* r) {
     al_draw_bitmap(r->door, 0, SCREEN_HEIGHT/2 - DOOR_HEIGHT/2, 0);
   }
 }
+
+Room** generate_floor(int rows, int cols) {
+  /* Room functionality testing */
+  Room** floor = malloc(rows * cols * sizeof(**floor));
+  Room r1, r2, r3, r4, r5, r6, r7, r8, r9;
+
+  /* Generate all the rooms on the floor */
+  generate_room(&r1, 1, "../assets/forest_1.png");
+  generate_room(&r2, 2, "../assets/forest_2.png");
+  generate_room(&r3, 3, "../assets/forest_3.png");
+  generate_room(&r4, 4, "../assets/forest_4.png");
+  generate_room(&r5, 5, "../assets/forest_5.png");
+  generate_room(&r6, 6, "../assets/forest_6.png");
+  generate_room(&r7, 7, "../assets/forest_7.png");
+  generate_room(&r8, 8, "../assets/forest_8.png");
+  generate_room(&r9, 9, "../assets/forest_9.png");
+
+  /* Link all the rooms together */
+  link_rooms(&r1, &r3, &r4, &r5, &r2);
+  link_rooms(&r2, &r6, &r7, &r1, NULL);
+  link_rooms(&r3, NULL, &r1, &r8, &r6);
+  link_rooms(&r4, &r1, NULL, &r9, &r7);
+  link_rooms(&r5, &r8, &r9, NULL, &r1);
+  link_rooms(&r6, NULL, &r2, &r3, NULL);
+  link_rooms(&r7, &r2, NULL, &r4, NULL);
+  link_rooms(&r8, NULL, &r5, NULL, &r3);
+  link_rooms(&r9, &r5, NULL, NULL, &r4);
+
+  floor[1][1] = r1;
+  floor[0][1] = r2;
+  floor[1][0] = r3;
+  floor[1][2] = r4;
+  floor[2][1] = r5;
+  floor[0][0] = r6;
+  floor[0][2] = r7;
+  floor[2][0] = r8;
+  floor[2][2] = r9;
+
+  return floor;
+}
