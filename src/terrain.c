@@ -1,5 +1,6 @@
 /* Standard Libraries */
 #include <stdio.h>
+#include <stdbool.h>
 
 /* Allegro Libraries */
 #include <allegro5/allegro5.h>              /* Base Allegro library */
@@ -9,31 +10,31 @@
 
 #include "terrain.h"
 
-void generate_room(Room* r, int ID, char* image_path) {
+const Room DEFAULT_ROOM = {
+  -1, -1, -1, -1, -1,
+  NULL,
+  NULL, NULL,
+  EMPTY,
+  false, false, false,
+  DEFAULT_HITBOX, DEFAULT_HITBOX, DEFAULT_HITBOX, DEFAULT_HITBOX
+};
+
+void generate_room(Room* r, int ID, int row_pos, int col_pos, char* image_path) {
     r->width = SCREEN_WIDTH;
     r->height = SCREEN_HEIGHT;
-    r->num_doors = 4;
+    r->row_pos = row_pos;
+    r->col_pos = col_pos;
     r->type = BASIC;
     r->is_spawnable = false;
     r->is_loaded = false;
     r->id = ID;
     r->path_to_map_image = image_path;
     r->is_initialized = true;
-/*
-    r->north_door = NULL;
-    r->south_door = NULL;
-    r->east_door = NULL;
-    r->west_door = NULL;
-*/
-    create_hitbox(&r->north_door, 0, 0, 0, 0);
-    create_hitbox(&r->south_door, 0, 0, 0, 0);
-    create_hitbox(&r->east_door, 0, 0, 0, 0);
-    create_hitbox(&r->west_door, 0, 0, 0, 0);
 
-    r->north = NULL;
-    r->south = NULL;
-    r->east = NULL;
-    r->west = NULL;
+    create_hitbox(&r->north_door, -1, -1, 0, 0);
+    create_hitbox(&r->south_door, -1, -1, 0, 0);
+    create_hitbox(&r->east_door, -1, -1, 0, 0);
+    create_hitbox(&r->west_door, -1, -1, 0, 0);
 }
 
 int load_room(Room* r) {
@@ -45,9 +46,10 @@ int load_room(Room* r) {
         return ERROR;
     }
     r->is_loaded = true;
+    printf("Loaded Room %d\n", r->id);
     return OK;
   } else {
-    printf("Room already loaded or not initialized.\n");
+    printf("Room %d load error: Initialization Status: %d, Load Status: %d\n", r->id, r->is_initialized, r->is_loaded);
     return ERROR;
   }
 }
@@ -64,32 +66,36 @@ int unload_room(Room* r) {
   }
 }
 
-Room* change_rooms(Room* current_room, Player* p) {
+Room* change_rooms(Room map[MAX_ROWS][MAX_COLS], Room* current_room, Player* p) {
   /* TODO: implement exception handling via status */
   int status;
-  if (is_collision(&p->hb, &current_room->west_door) && current_room->west) {
-    status = load_room(current_room->west);
+  int curr_row = current_room->row_pos;
+  int curr_col = current_room->col_pos;
+
+  if (is_collision(&p->hb, &current_room->west_door) && map[curr_row-1][curr_col].is_initialized) {
+    status = load_room(&map[curr_row-1][curr_col]);
     status = unload_room(current_room);
     spawn_player(SCREEN_WIDTH-DOOR_WIDTH-PLAYER_WIDTH-1, p->pos_y, p);
-    return current_room->west;
+    return &map[curr_row-1][curr_col];
   }
-  else if (is_collision(&p->hb, &current_room->east_door) && current_room->east) {
-    status = load_room(current_room->east);
+  else if (is_collision(&p->hb, &current_room->east_door) && map[curr_row+1][curr_col].is_initialized) {
+    status = load_room(&map[curr_row+1][curr_col]);
     status = unload_room(current_room);
     spawn_player(1 + DOOR_WIDTH, p->pos_y, p);
-    return current_room->east;
+    return &map[curr_row+1][curr_col];
   }
-  else if (is_collision(&p->hb, &current_room->north_door) && current_room->north) {
-    status = load_room(current_room->north);
+  else if (is_collision(&p->hb, &current_room->north_door) && map[curr_row][curr_col-1].is_initialized) {
+    status = load_room(&map[curr_row][curr_col-1]);
     status = unload_room(current_room);
     spawn_player(p->pos_x, SCREEN_HEIGHT - PLAYER_HEIGHT - DOOR_WIDTH - 1, p);
-    return current_room->north;
+    return &map[curr_row][curr_col-1];
   }
-  else if (is_collision(&p->hb, &current_room->south_door)&& current_room->south) {
-    status = load_room(current_room->south);
+  /* TODO: something weird going on with the south door hitboxes. */
+  else if (is_collision(&p->hb, &current_room->south_door) && map[curr_row][curr_col+1].is_initialized) {
+    status = load_room(&map[curr_row][curr_col+1]);
     status = unload_room(current_room);
     spawn_player(p->pos_x, DOOR_WIDTH + 1, p);
-    return current_room->south;
+    return &map[curr_row][curr_col+1];
   }
   else {
     printf("Nowhere to go\n");
@@ -97,81 +103,94 @@ Room* change_rooms(Room* current_room, Player* p) {
   }
 }
 
-void link_rooms(Room* ref, Room* north, Room* south, Room* east, Room* west) {
-  ref->north = north;
-  ref->south = south;
-  ref->east = east;
-  ref->west = west;
-
-  if(ref->west != NULL) {
-    create_hitbox(&ref->west_door, 0, SCREEN_HEIGHT/2 - DOOR_HEIGHT/2, DOOR_WIDTH, DOOR_HEIGHT);
+void link_rooms(Room map[MAX_ROWS][MAX_COLS]){
+  for(int i = 0; i < MAX_ROWS; ++i){
+    for(int j = 0; j < MAX_COLS; ++j){
+      /* North */
+      if(map[i][j].is_initialized) {
+        if(map[i][j-1].is_initialized && j >= 1){
+          //printf("Current Room %d,%d: North Room Detected!\n", i, j);
+          create_hitbox(&map[i][j].north_door, SCREEN_WIDTH/2 - DOOR_HEIGHT/2, 0, DOOR_HEIGHT, DOOR_WIDTH);
+        }
+        /* South */
+        if(map[i][j+1].is_initialized && j <= MAX_COLS-1){
+          //printf("Current Room %d,%d: South Room Detected!\n", i, j);
+          create_hitbox(&map[i][j].south_door, SCREEN_WIDTH/2 - DOOR_HEIGHT/2, SCREEN_HEIGHT - DOOR_WIDTH, DOOR_HEIGHT, DOOR_WIDTH);
+        }
+        /* East */
+        if(map[i+1][j].is_initialized && i <= MAX_ROWS - 1){
+          //printf("Current Room %d,%d: East Room Detected!\n", i, j);
+          create_hitbox(&map[i][j].east_door, SCREEN_WIDTH - DOOR_WIDTH, SCREEN_HEIGHT/2 - DOOR_HEIGHT/2, DOOR_WIDTH, DOOR_HEIGHT);
+        }
+        /* West */
+        if(map[i-1][j].is_initialized && i >= 1){
+          //printf("Current Room %d,%d: West Room Detected!\n", i, j);
+          create_hitbox(&map[i][j].west_door, 0, SCREEN_HEIGHT/2 - DOOR_HEIGHT/2, DOOR_WIDTH, DOOR_HEIGHT);
+        }
+      }      
+    }
   }
-  if(ref->east != NULL) {
-    create_hitbox(&ref->east_door, SCREEN_WIDTH - DOOR_WIDTH, SCREEN_HEIGHT/2 - DOOR_HEIGHT/2, DOOR_WIDTH, DOOR_HEIGHT);
-  }
-  if(ref->north != NULL) {
-    create_hitbox(&ref->north_door, SCREEN_WIDTH/2 - DOOR_HEIGHT/2, 0, DOOR_HEIGHT, DOOR_WIDTH);
-  }
-  if(ref->south != NULL) {
-    create_hitbox(&ref->south_door, SCREEN_WIDTH/2 - DOOR_HEIGHT/2, SCREEN_HEIGHT - DOOR_WIDTH, DOOR_HEIGHT, DOOR_WIDTH);
-  }
-
 }
 
 void show_room(Room* r) {
   al_draw_bitmap(r->map, 0, 0, 0);
 
   /* draw doors of the room as well.. */
-  if(r->north != NULL) {
+  if(r->north_door.px != -1) {
     al_draw_rotated_bitmap(r->door, 0, DOOR_HEIGHT/2, SCREEN_WIDTH/2, 0, ALLEGRO_PI/2, 0);
   }
-  if(r->south != NULL) {
+  if(r->south_door.px != -1) {
     al_draw_rotated_bitmap(r->door, 0, DOOR_HEIGHT/2, SCREEN_WIDTH/2, SCREEN_HEIGHT - DOOR_WIDTH, ALLEGRO_PI/2, ALLEGRO_FLIP_HORIZONTAL);
   }
-  if(r->east != NULL) {
+  if(r->east_door.px != -1) {
     al_draw_bitmap(r->door, SCREEN_WIDTH - DOOR_WIDTH, SCREEN_HEIGHT/2 - DOOR_HEIGHT/2, ALLEGRO_FLIP_HORIZONTAL);
   }
-  if(r->west != NULL) {
+  if(r->west_door.px != -1) {
     al_draw_bitmap(r->door, 0, SCREEN_HEIGHT/2 - DOOR_HEIGHT/2, 0);
   }
 }
 
-Room** generate_floor(int rows, int cols) {
+void print_floor(Floor* f) {
+  for(int i = 0; i < MAX_ROWS; ++i){
+    for(int j = 0; j < MAX_COLS; ++j){
+      printf(" %d ", f->map[i][j].is_initialized);
+    }
+    printf("\n");
+  }
+}
+
+void generate_floor(Floor* f, int rows, int cols) {
   /* Room functionality testing */
-  Room** floor = malloc(rows * cols * sizeof(**floor));
+  for(int i = 0; i < MAX_ROWS; ++i){
+    for(int j = 0; j < MAX_COLS; ++j){
+      f->map[i][j] = DEFAULT_ROOM;
+    }
+  }
   Room r1, r2, r3, r4, r5, r6, r7, r8, r9;
 
   /* Generate all the rooms on the floor */
-  generate_room(&r1, 1, "../assets/forest_1.png");
-  generate_room(&r2, 2, "../assets/forest_2.png");
-  generate_room(&r3, 3, "../assets/forest_3.png");
-  generate_room(&r4, 4, "../assets/forest_4.png");
-  generate_room(&r5, 5, "../assets/forest_5.png");
-  generate_room(&r6, 6, "../assets/forest_6.png");
-  generate_room(&r7, 7, "../assets/forest_7.png");
-  generate_room(&r8, 8, "../assets/forest_8.png");
-  generate_room(&r9, 9, "../assets/forest_9.png");
+  generate_room(&r1, 1, 1, 1, "../assets/forest_1.png");
+  generate_room(&r2, 2, 0, 1, "../assets/forest_2.png");
+  generate_room(&r3, 3, 1, 0, "../assets/forest_3.png");
+  generate_room(&r4, 4, 1, 2, "../assets/forest_4.png");
+  generate_room(&r5, 5, 2, 1, "../assets/forest_5.png");
+  generate_room(&r6, 6, 0, 0, "../assets/forest_6.png");
+  generate_room(&r7, 7, 0, 2, "../assets/forest_7.png");
+  generate_room(&r8, 8, 2, 0, "../assets/forest_8.png");
+  generate_room(&r9, 9, 2, 2, "../assets/forest_9.png");
 
   /* Link all the rooms together */
-  link_rooms(&r1, &r3, &r4, &r5, &r2);
-  link_rooms(&r2, &r6, &r7, &r1, NULL);
-  link_rooms(&r3, NULL, &r1, &r8, &r6);
-  link_rooms(&r4, &r1, NULL, &r9, &r7);
-  link_rooms(&r5, &r8, &r9, NULL, &r1);
-  link_rooms(&r6, NULL, &r2, &r3, NULL);
-  link_rooms(&r7, &r2, NULL, &r4, NULL);
-  link_rooms(&r8, NULL, &r5, NULL, &r3);
-  link_rooms(&r9, &r5, NULL, NULL, &r4);
+  f->map[1][1] = r1;
+  f->map[0][1] = r2;
+  f->map[1][0] = r3;
+  f->map[1][2] = r4;
+  f->map[2][1] = r5;
+  f->map[0][0] = r6;
+  f->map[0][2] = r7;
+  f->map[2][0] = r8;
+  f->map[2][2] = r9;
 
-  floor[1][1] = r1;
-  floor[0][1] = r2;
-  floor[1][0] = r3;
-  floor[1][2] = r4;
-  floor[2][1] = r5;
-  floor[0][0] = r6;
-  floor[0][2] = r7;
-  floor[2][0] = r8;
-  floor[2][2] = r9;
+  link_rooms(f->map);
 
-  return floor;
+  print_floor(f);
 }

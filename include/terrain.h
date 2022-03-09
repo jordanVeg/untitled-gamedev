@@ -8,6 +8,9 @@
 #define DOOR_HEIGHT (2 * PLAYER_HEIGHT)
 #define DOOR_WIDTH  32
 
+#define MAX_ROWS 10
+#define MAX_COLS 10
+
 #define NUM_ROWS 3
 #define NUM_COLS 3
 
@@ -18,11 +21,12 @@ typedef enum {
   KEY,
   EXIT,
   SHOP,
+  EMPTY,
   CHALLENGE
 } ROOM_TYPE;
 
 typedef struct room {
-    int width, height, num_doors, id;
+    int width, height, id, row_pos, col_pos;
     char* path_to_map_image;
     ALLEGRO_BITMAP* map;
     ALLEGRO_BITMAP* door;
@@ -35,25 +39,26 @@ typedef struct room {
     */
 
     Hitbox north_door, south_door, east_door, west_door;
-
-    struct room* north;
-    struct room* south;
-    struct room* east;
-    struct room* west;
 } Room;
 
-void generate_room(Room* r, int ID, char* image_path);
+typedef struct floor {
+  int number;
+  Room map[MAX_ROWS][MAX_COLS];
+} Floor;
+
+void generate_room(Room* r, int ID, int row_pos, int col_pos, char* image_path);
 
 int load_room(Room* r);
 
 int unload_room(Room* r);
 
-Room* change_rooms(Room* current_room, Player* p);
+Room* change_rooms(Room map[MAX_ROWS][MAX_COLS], Room* current_room, Player* p);
 
-void link_rooms(Room* ref, Room* north, Room* south, Room* east, Room* west);
+void link_rooms(Room map[MAX_ROWS][MAX_COLS]);
+//void link_rooms(Room* ref, Room* north, Room* south, Room* east, Room* west);
 
 void show_room(Room* r);
 
-Room** generate_floor(int rows, int cols);
+void generate_floor(Floor* f, int rows, int cols);
 
 #endif

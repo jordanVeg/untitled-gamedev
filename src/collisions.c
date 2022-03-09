@@ -40,6 +40,6 @@ bool is_collision(Hitbox* hb1, Hitbox* hb2) {
 
   /* Output */
   bool output = (L1_in_range && T1_in_range) || (L2_in_range && T2_in_range) || (R1_in_range && B1_in_range) || (R2_in_range && B2_in_range);
-  if(output) printf("Collision Detected!\n");
+  //if(output) printf("Collision Detected!\n");
   return output;
 }

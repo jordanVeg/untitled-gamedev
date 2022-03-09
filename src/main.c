@@ -69,11 +69,10 @@ int main(int argc, char** argv) {
     status += spawn_player(SCREEN_WIDTH/2 - PLAYER_WIDTH/2, SCREEN_HEIGHT/2 - PLAYER_HEIGHT/2, &p);
 
     Room* current_room;
-    Room** Floor;
-    Floor = malloc(NUM_ROWS * NUM_COLS * sizeof(**Floor));
-    Floor = generate_floor(NUM_ROWS, NUM_COLS);
+    Floor f;
+    generate_floor(&f, NUM_ROWS, NUM_COLS);
     /* Testing out creating a hitbox */
-    current_room = &Floor[1][1];
+    current_room = &f.map[1][1];
     status += load_room(current_room);
     if(status != OK) {
         printf("an error has occured. Exiting...");
@@ -105,7 +104,7 @@ int main(int argc, char** argv) {
                    is_collision(&p.hb, &current_room->south_door) ||
                    is_collision(&p.hb, &current_room->east_door) ||
                    is_collision(&p.hb, &current_room->west_door)) {
-                  current_room = change_rooms(current_room, &p);
+                  current_room = change_rooms(f.map, current_room, &p);
                 }
                 if(key[ALLEGRO_KEY_ESCAPE]) {
                     done = true;

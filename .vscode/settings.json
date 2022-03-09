@@ -7,6 +7,8 @@
         "base.h": "c",
         "allegro.h": "c",
         "allegro_font.h": "c",
-        "collisions.h": "c"
-    }
+        "collisions.h": "c",
+        "cmath": "c"
+    },
+    "C_Cpp.errorSquiggles": "Disabled"
 }
