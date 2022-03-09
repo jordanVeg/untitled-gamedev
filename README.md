@@ -23,8 +23,10 @@ Rogue-lite, but you're a wizard....who can write their own spells!
     - [x] Create 'rooms' that can link together
     - [x] Hardcode basic 3x3 map for exploration and testing
     - [ ] Room Generation
+        - [x] Hardcoded
+        - [ ] Dynamic 
     - [ ] Floor Generation
-      - [ ] Simple/Hardcoded
+      - [x] Simple/Hardcoded
       - [ ] Dynamic
 - [ ] Character Control
     - [x] Character Struct

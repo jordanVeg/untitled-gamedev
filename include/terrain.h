@@ -55,7 +55,6 @@ int unload_room(Room* r);
 Room* change_rooms(Room map[MAX_ROWS][MAX_COLS], Room* current_room, Player* p);
 
 void link_rooms(Room map[MAX_ROWS][MAX_COLS]);
-//void link_rooms(Room* ref, Room* north, Room* south, Room* east, Room* west);
 
 void show_room(Room* r);
 
