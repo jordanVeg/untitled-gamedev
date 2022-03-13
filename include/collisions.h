@@ -5,7 +5,7 @@ typedef struct hitbox {
   int px, py, width, height;
 } Hitbox;
 
-static const Hitbox DEFAULT_HITBOX = {0, 0, 0, 0};
+static const Hitbox DEFAULT_HITBOX = {-1, -1, 0, 0};
 
 void create_hitbox(Hitbox* hb, int x, int y, int width, int height);
 

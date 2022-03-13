@@ -5,6 +5,9 @@
 #ifndef INCLUDE_TERRAIN_H
   #define INCLUDE_TERRAIN_H
 
+#define ID_SIZE         8
+#define IMAGE_PATH_SIZE 23
+
 #define DOOR_HEIGHT (2 * PLAYER_HEIGHT)
 #define DOOR_WIDTH  32
 
@@ -26,8 +29,9 @@ typedef enum {
 } ROOM_TYPE;
 
 typedef struct room {
-    int width, height, id, row_pos, col_pos;
-    char* path_to_map_image;
+    int width, height, row_pos, col_pos;
+    char id[ID_SIZE];
+    char path_to_map_image[IMAGE_PATH_SIZE];
     ALLEGRO_BITMAP* map;
     ALLEGRO_BITMAP* door;
     ROOM_TYPE type;
@@ -46,7 +50,7 @@ typedef struct floor {
   Room map[MAX_ROWS][MAX_COLS];
 } Floor;
 
-void generate_room(Room* r, int ID, int row_pos, int col_pos, char* image_path);
+Room generate_room(int row_pos, int col_pos, char image_path[IMAGE_PATH_SIZE]);
 
 int load_room(Room* r);
 
@@ -57,6 +61,8 @@ Room* change_rooms(Room map[MAX_ROWS][MAX_COLS], Room* current_room, Player* p);
 void link_rooms(Room map[MAX_ROWS][MAX_COLS]);
 
 void show_room(Room* r);
+
+void print_floor(Floor* f);
 
 void generate_floor(Floor* f, int rows, int cols);
 

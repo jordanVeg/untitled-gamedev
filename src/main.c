@@ -18,7 +18,7 @@
 #define KEY_SEEN     1
 #define KEY_RELEASED 2
 
-#define FPS           60.0
+#define FPS          60.0
 
 bool show_dev_tools = false;
 
@@ -70,9 +70,10 @@ int main(int argc, char** argv) {
 
     Room* current_room;
     Floor f;
-    generate_floor(&f, NUM_ROWS, NUM_COLS);
+    generate_floor(&f, 6, 7);
+
     /* Testing out creating a hitbox */
-    current_room = &f.map[1][1];
+    current_room = &f.map[0][0];
     status += load_room(current_room);
     if(status != OK) {
         printf("an error has occured. Exiting...");
