@@ -14,6 +14,7 @@
 #include "player.h"
 #include "global.h"
 #include "terrain.h"
+#include "random.h"
 
 #define KEY_SEEN     1
 #define KEY_RELEASED 2
@@ -63,17 +64,23 @@ int main(int argc, char** argv) {
     al_register_event_source(queue, al_get_display_event_source(disp));
     al_register_event_source(queue, al_get_timer_event_source(timer));
 
-    /* Player Setup (hopefully) */
+    /* Initialize random number generator */
+    rng_initialize();
+    
+    /* Player Setup */
     Player p;
     int status = initialize_player(&p);
     status += spawn_player(SCREEN_WIDTH/2 - PLAYER_WIDTH/2, SCREEN_HEIGHT/2 - PLAYER_HEIGHT/2, &p);
 
+    /* Floor & room setup*/
     Room* current_room;
     Floor f;
-    generate_floor(&f, 6, 7);
+    int start_row = MAX_ROWS/2;
+    int start_col = MAX_COLS/2;
+    generate_floor(&f, start_row, start_col);
 
     /* Testing out creating a hitbox */
-    current_room = &f.map[0][0];
+    current_room = &f.map[start_row][start_col];
     status += load_room(current_room);
     if(status != OK) {
         printf("an error has occured. Exiting...");

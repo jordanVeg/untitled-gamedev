@@ -64,6 +64,6 @@ void show_room(Room* r);
 
 void print_floor(Floor* f);
 
-void generate_floor(Floor* f, int rows, int cols);
+void generate_floor(Floor* f, int start_row, int start_col);
 
 #endif

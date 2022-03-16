@@ -10,6 +10,7 @@
 #include <allegro5/allegro_primitives.h>    /* Allegro Primatives library */
 
 #include "terrain.h"
+#include "random.h"
 
 const Room DEFAULT_ROOM = {
   -1,             /* width */ 
@@ -180,14 +181,14 @@ void print_floor(Floor* f) {
   }
 }
 
-void generate_floor(Floor* f, int rows, int cols) {
+void generate_floor(Floor* f, int start_row, int start_col) {
   /* Fill floor map with rooms:
-  *  Current Algorithm is to create a square of rooms [rows]x[cols] large. 
+  *  Current Algorithm is to create a + sign with a random chance for additional rooms 
   */
 
   for(int i = 0; i < MAX_ROWS; ++i) {
     for(int j = 0; j < MAX_COLS; ++j) {
-      if( i <= rows && j <= cols) { 
+      if( i == start_row || j == start_col || rng_in_range(0.10)) { 
         char room_path[IMAGE_PATH_SIZE];
         snprintf(room_path, sizeof(room_path), "../assets/forest_%d.png", (i+j)%9+1);
         f->map[i][j] = generate_room(i, j, room_path);
