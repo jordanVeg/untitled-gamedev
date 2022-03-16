@@ -22,12 +22,12 @@ Rogue-lite, but you're a wizard....who can write their own spells!
     - [x] Use default image as basic map
     - [x] Create 'rooms' that can link together
     - [x] Hardcode basic 3x3 map for exploration and testing
-    - [ ] Room Generation
+    - [x] Basic Room Generation
         - [x] Hardcoded
-        - [ ] Dynamic 
+        - [x] Dynamic 
     - [ ] Floor Generation
       - [x] Simple/Hardcoded
-      - [ ] Dynamic
+      - [x] Dynamic
 - [ ] Character Control
     - [x] Character Struct
     - [x] Basic Movement
