@@ -95,32 +95,32 @@ Room* change_rooms(Room map[MAX_ROWS][MAX_COLS], Room* current_room, Player* p) 
   int curr_col = current_room->col_pos;
 
   /* Check for north door collision */
-  if(is_collision(&p->hb, &current_room->north_door) && map[curr_row][curr_col-1].is_initialized) {
-    status = load_room(&map[curr_row][curr_col-1]);
-    status = unload_room(current_room);
-    spawn_player(p->pos_x, SCREEN_HEIGHT - PLAYER_HEIGHT - DOOR_WIDTH - 1, p);
-    return &map[curr_row][curr_col-1];
-  }
-  /* Check for south door collision */
-  else if(is_collision(&p->hb, &current_room->south_door) && map[curr_row][curr_col+1].is_initialized) {
-    status = load_room(&map[curr_row][curr_col+1]);
-    status = unload_room(current_room);
-    spawn_player(p->pos_x, DOOR_WIDTH + 1, p);
-    return &map[curr_row][curr_col+1];
-  }
-  /* Check for east door collision */
-  else if(is_collision(&p->hb, &current_room->east_door) && map[curr_row+1][curr_col].is_initialized) {
-    status = load_room(&map[curr_row+1][curr_col]);
-    status = unload_room(current_room);
-    spawn_player(1 + DOOR_WIDTH, p->pos_y, p);
-    return &map[curr_row+1][curr_col];
-  }
-  /* Check for west door collision */
-  else if(is_collision(&p->hb, &current_room->west_door) && map[curr_row-1][curr_col].is_initialized) {
+  if(is_collision(&p->hb, &current_room->north_door) && map[curr_row-1][curr_col].is_initialized) {
     status = load_room(&map[curr_row-1][curr_col]);
     status = unload_room(current_room);
-    spawn_player(SCREEN_WIDTH-DOOR_WIDTH-PLAYER_WIDTH-1, p->pos_y, p);
+    spawn_player(p->pos_x, SCREEN_HEIGHT - PLAYER_HEIGHT - DOOR_WIDTH - 1, p);
     return &map[curr_row-1][curr_col];
+  }
+  /* Check for south door collision */
+  else if(is_collision(&p->hb, &current_room->south_door) && map[curr_row+1][curr_col].is_initialized) {
+    status = load_room(&map[curr_row+1][curr_col]);
+    status = unload_room(current_room);
+    spawn_player(p->pos_x, DOOR_WIDTH + 1, p);
+    return &map[curr_row+1][curr_col];
+  }
+  /* Check for east door collision */
+  else if(is_collision(&p->hb, &current_room->east_door) && map[curr_row][curr_col+1].is_initialized) {
+    status = load_room(&map[curr_row][curr_col+1]);
+    status = unload_room(current_room);
+    spawn_player(1 + DOOR_WIDTH, p->pos_y, p);
+    return &map[curr_row][curr_col+1];
+  }
+  /* Check for west door collision */
+  else if(is_collision(&p->hb, &current_room->west_door) && map[curr_row][curr_col-1].is_initialized) {
+    status = load_room(&map[curr_row][curr_col-1]);
+    status = unload_room(current_room);
+    spawn_player(SCREEN_WIDTH-DOOR_WIDTH-PLAYER_WIDTH-1, p->pos_y, p);
+    return &map[curr_row][curr_col-1];
   }
   else {
     printf("Nowhere to go\n");
@@ -134,19 +134,24 @@ void link_rooms(Room map[MAX_ROWS][MAX_COLS]) {
       /* Verify room is initialized before trying to create doorways */
       if(map[i][j].is_initialized) {
         /* North */
-        if(map[i][j-1].is_initialized && j >= 1) {
+        //printf("Map (%d, %d):\n",i, j);
+        if(map[i-1][j].is_initialized && i >= 1) {
+          //printf("found north room.\n");
           create_hitbox(&map[i][j].north_door, SCREEN_WIDTH/2 - DOOR_HEIGHT/2, 0, DOOR_HEIGHT, DOOR_WIDTH);
         }
         /* South */
-        if(map[i][j+1].is_initialized && j <= MAX_COLS-1) {
+        if(map[i+1][j].is_initialized && i <= MAX_ROWS-1) {
+         // printf("found south room.\n");
           create_hitbox(&map[i][j].south_door, SCREEN_WIDTH/2 - DOOR_HEIGHT/2, SCREEN_HEIGHT - DOOR_WIDTH, DOOR_HEIGHT, DOOR_WIDTH);
         }
         /* East */
-        if(map[i+1][j].is_initialized && i <= MAX_ROWS - 1) {
+        if(map[i][j+1].is_initialized && j <= MAX_COLS - 1) {
+          //printf("found east room.\n");
           create_hitbox(&map[i][j].east_door, SCREEN_WIDTH - DOOR_WIDTH, SCREEN_HEIGHT/2 - DOOR_HEIGHT/2, DOOR_WIDTH, DOOR_HEIGHT);
         }
         /* West */
-        if(map[i-1][j].is_initialized && i >= 1) {
+        if(map[i][j-1].is_initialized && j >= 1) {
+          //printf("found west room.\n");
           create_hitbox(&map[i][j].west_door, 0, SCREEN_HEIGHT/2 - DOOR_HEIGHT/2, DOOR_WIDTH, DOOR_HEIGHT);
         }
       }      
@@ -174,8 +179,13 @@ void show_room(Room* r) {
 
 void print_floor(Floor* f) {
   for(int i = 0; i < MAX_ROWS; ++i){
-    for(int j = 0; j < MAX_COLS; ++j){
-      printf(" %d ", f->map[i][j].is_initialized);
+    for(int j = 0; j < MAX_COLS; ++j) {
+      if(f->map[i][j].is_initialized) {
+        printf(" %s ", f->map[i][j].id);
+      }
+      else {
+        printf(" xxx-xxx ");
+      }
     }
     printf("\n");
   }
@@ -188,7 +198,8 @@ void generate_floor(Floor* f, int start_row, int start_col) {
 
   for(int i = 0; i < MAX_ROWS; ++i) {
     for(int j = 0; j < MAX_COLS; ++j) {
-      if( i == start_row || j == start_col || rng_in_range(0.10)) { 
+      if( i == start_row || j == start_col || rng_percent_chance(0.25)) {
+        printf("generating room (%d,%d)\n", i, j);
         char room_path[IMAGE_PATH_SIZE];
         snprintf(room_path, sizeof(room_path), "../assets/forest_%d.png", (i+j)%9+1);
         f->map[i][j] = generate_room(i, j, room_path);

@@ -3,7 +3,7 @@
 
 void rng_initialize();
 
-bool rng_in_range(double percent);
+bool rng_percent_chance(double percent);
 
 int rng_random_int(int max);
 

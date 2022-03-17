@@ -8,7 +8,7 @@ void rng_initialize() {
     srand(time(NULL));
 }
 
-bool rng_in_range(double percent) {
+bool rng_percent_chance(double percent) {
     return (double)rand()/(double)((unsigned)RAND_MAX) <= percent;
 }
 
