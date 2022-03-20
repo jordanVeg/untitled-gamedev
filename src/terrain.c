@@ -179,33 +179,81 @@ void show_room(Room* r) {
 
 void print_floor(Floor* f) {
   for(int i = 0; i < MAX_ROWS; ++i){
+    printf("|");
     for(int j = 0; j < MAX_COLS; ++j) {
       if(f->map[i][j].is_initialized) {
-        printf(" %s ", f->map[i][j].id);
+        printf("-");
+        //printf(" %s ", f->map[i][j].id);
       }
       else {
-        printf(" xxx-xxx ");
+        printf("#");
+        //printf(" xxx-xxx ");
       }
     }
-    printf("\n");
+    printf("|\n");
   }
+}
+
+int generate_path_between_rooms(Room map[MAX_ROWS][MAX_COLS], int r1, int c1, int r2, int c2) {
+  if(!map[r1][c1].is_initialized && !map[r2][c2].is_initialized) {
+    return ERROR;
+  }
+  int current_row = r1;
+  int current_col = c1;
+  char room_path[IMAGE_PATH_SIZE];
+  double chance = 0.5;
+  while((current_row != r2) || (current_col != c2)) {
+    if(rng_percent_chance(chance) && current_row != r2) {
+      /* Handle Row first */
+      if(current_row < r2) current_row+=1;
+      else if(current_row > r2) current_row-=1;
+
+      if(!map[current_row][current_col].is_initialized) {
+
+        snprintf(room_path, sizeof(room_path), "../assets/forest_%d.png", (current_row+current_col)%9+1);
+        map[current_row][current_col] = generate_room(current_row, current_col, room_path);
+      }
+      if(current_row == r2) chance = 1;
+    }
+    else if(current_col != c2) {
+      if(current_col < c2) current_col+=1;
+      else if(current_col > c2) current_col-=1;
+
+      if(!map[current_row][current_col].is_initialized) {
+        snprintf(room_path, sizeof(room_path), "../assets/forest_%d.png", (current_row+current_col)%9+1);
+        map[current_row][current_col] = generate_room(current_row, current_col, room_path);
+      }
+      if(current_col == c2) chance = 1;
+    }
+  }
+  return OK;
 }
 
 void generate_floor(Floor* f, int start_row, int start_col) {
   /* Fill floor map with rooms:
-  *  Current Algorithm is to create a + sign with a random chance for additional rooms 
+  *  Current Algorithm is to create random points and connect them to the center. 
   */
 
   for(int i = 0; i < MAX_ROWS; ++i) {
     for(int j = 0; j < MAX_COLS; ++j) {
-      if( i == start_row || j == start_col || rng_percent_chance(0.25)) {
-        printf("generating room (%d,%d)\n", i, j);
+      if((i == start_row && j == start_col) || rng_percent_chance(0.05)) {
         char room_path[IMAGE_PATH_SIZE];
         snprintf(room_path, sizeof(room_path), "../assets/forest_%d.png", (i+j)%9+1);
         f->map[i][j] = generate_room(i, j, room_path);
       } 
       else {
         f->map[i][j] = DEFAULT_ROOM;
+      }
+    }
+  }
+
+  print_floor(f);
+  printf("-----------------------------------------------\n");
+
+  for(int i = 0; i < MAX_ROWS; ++i) {
+    for(int j = 0; j < MAX_COLS; ++j) {
+      if(f->map[i][j].is_initialized) {
+          generate_path_between_rooms(f->map, start_row, start_col, i, j);
       }
     }
   }
