@@ -5,6 +5,6 @@ void rng_initialize();
 
 bool rng_percent_chance(double percent);
 
-int rng_random_int(int max);
+int rng_random_int(int min, int max);
 
 #endif

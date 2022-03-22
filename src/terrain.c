@@ -2,6 +2,7 @@
 #include <stdio.h>
 #include <stdbool.h>
 #include <string.h>
+#include <math.h>
 
 /* Allegro Libraries */
 #include <allegro5/allegro5.h>              /* Base Allegro library */
@@ -11,6 +12,8 @@
 
 #include "terrain.h"
 #include "random.h"
+
+#define MIN_SUBGRAPH_SIZE 2
 
 const Room DEFAULT_ROOM = {
   -1,             /* width */ 
@@ -32,7 +35,6 @@ const Room DEFAULT_ROOM = {
 };
 
 Room generate_room(int row_pos, int col_pos, char image_path[IMAGE_PATH_SIZE]) {
-  
     Room r = {
       .width   = SCREEN_WIDTH,
       .height  = SCREEN_HEIGHT,
@@ -134,25 +136,32 @@ void link_rooms(Room map[MAX_ROWS][MAX_COLS]) {
       /* Verify room is initialized before trying to create doorways */
       if(map[i][j].is_initialized) {
         /* North */
-        //printf("Map (%d, %d):\n",i, j);
-        if(map[i-1][j].is_initialized && i >= 1) {
-          //printf("found north room.\n");
-          create_hitbox(&map[i][j].north_door, SCREEN_WIDTH/2 - DOOR_HEIGHT/2, 0, DOOR_HEIGHT, DOOR_WIDTH);
+        if(i > 0) {
+          if(map[i-1][j].is_initialized) {
+            //printf("found north room.\n");
+            create_hitbox(&map[i][j].north_door, SCREEN_WIDTH/2 - DOOR_HEIGHT/2, 0, DOOR_HEIGHT, DOOR_WIDTH);
+          }
         }
         /* South */
-        if(map[i+1][j].is_initialized && i <= MAX_ROWS-1) {
-         // printf("found south room.\n");
-          create_hitbox(&map[i][j].south_door, SCREEN_WIDTH/2 - DOOR_HEIGHT/2, SCREEN_HEIGHT - DOOR_WIDTH, DOOR_HEIGHT, DOOR_WIDTH);
+        if(i < MAX_ROWS-1) {
+          if(map[i+1][j].is_initialized) {
+            //printf("found south room.\n");
+            create_hitbox(&map[i][j].south_door, SCREEN_WIDTH/2 - DOOR_HEIGHT/2, SCREEN_HEIGHT - DOOR_WIDTH, DOOR_HEIGHT, DOOR_WIDTH);
+          }
         }
         /* East */
-        if(map[i][j+1].is_initialized && j <= MAX_COLS - 1) {
-          //printf("found east room.\n");
-          create_hitbox(&map[i][j].east_door, SCREEN_WIDTH - DOOR_WIDTH, SCREEN_HEIGHT/2 - DOOR_HEIGHT/2, DOOR_WIDTH, DOOR_HEIGHT);
+        if(j < MAX_COLS-1) {
+          if(map[i][j+1].is_initialized) {
+            //printf("found east room.\n");
+            create_hitbox(&map[i][j].east_door, SCREEN_WIDTH - DOOR_WIDTH, SCREEN_HEIGHT/2 - DOOR_HEIGHT/2, DOOR_WIDTH, DOOR_HEIGHT);
+          }
         }
         /* West */
-        if(map[i][j-1].is_initialized && j >= 1) {
-          //printf("found west room.\n");
-          create_hitbox(&map[i][j].west_door, 0, SCREEN_HEIGHT/2 - DOOR_HEIGHT/2, DOOR_WIDTH, DOOR_HEIGHT);
+        if(j > 0) {
+          if(map[i][j-1].is_initialized) {
+            //printf("found west room.\n");
+            create_hitbox(&map[i][j].west_door, 0, SCREEN_HEIGHT/2 - DOOR_HEIGHT/2, DOOR_WIDTH, DOOR_HEIGHT);
+          }
         }
       }      
     }
@@ -182,7 +191,7 @@ void print_floor(Floor* f) {
     printf("|");
     for(int j = 0; j < MAX_COLS; ++j) {
       if(f->map[i][j].is_initialized) {
-        printf("-");
+        printf(".");
         //printf(" %s ", f->map[i][j].id);
       }
       else {
@@ -201,6 +210,7 @@ int generate_path_between_rooms(Room map[MAX_ROWS][MAX_COLS], int r1, int c1, in
   int current_row = r1;
   int current_col = c1;
   char room_path[IMAGE_PATH_SIZE];
+  /* Start with a 50% chance to move in the x or y direction to try to avoid row/col bias */
   double chance = 0.5;
   while((current_row != r2) || (current_col != c2)) {
     if(rng_percent_chance(chance) && current_row != r2) {
@@ -208,56 +218,113 @@ int generate_path_between_rooms(Room map[MAX_ROWS][MAX_COLS], int r1, int c1, in
       if(current_row < r2) current_row+=1;
       else if(current_row > r2) current_row-=1;
 
+      /* Generate room if it is not already initialized */
       if(!map[current_row][current_col].is_initialized) {
-
         snprintf(room_path, sizeof(room_path), "../assets/forest_%d.png", (current_row+current_col)%9+1);
         map[current_row][current_col] = generate_room(current_row, current_col, room_path);
       }
-      if(current_row == r2) chance = 1;
     }
     else if(current_col != c2) {
+      /* Handle Column next */
       if(current_col < c2) current_col+=1;
       else if(current_col > c2) current_col-=1;
 
+      /* Generate room if it is not already initialized */
       if(!map[current_row][current_col].is_initialized) {
         snprintf(room_path, sizeof(room_path), "../assets/forest_%d.png", (current_row+current_col)%9+1);
         map[current_row][current_col] = generate_room(current_row, current_col, room_path);
       }
+      /* Set Chance to be 100% as to not waste loops. */
       if(current_col == c2) chance = 1;
     }
   }
   return OK;
 }
 
+Room bsp_step(Room map[MAX_ROWS][MAX_COLS],
+              int init_row_pos,
+              int init_col_pos,
+              int start_row, 
+              int end_row, 
+              int start_col, 
+              int end_col) {
+  /* 
+  * Here are the steps to the Binary Space Partitioning (BSP) algorithm:
+  * 1. check if we are in exit condition
+  *   -> if so, return a generated room within the range.
+  * 2. else decide wether to split the map vertically or horizontally
+  *   -> split current map sections, and call bsp_step on each subgraph.
+  *     -> This should (eventually) return rooms R1 and R2
+  *   -> create path between the R1 and R2
+  *   -> return either R1 or R2 (for future linking)
+  */
+
+  /* Recursive exit condition: if subgraph is <= minimum size, generate a room and exit */
+  if((end_row-start_row <= MIN_SUBGRAPH_SIZE) || (end_col-start_col <= MIN_SUBGRAPH_SIZE)) {
+    int row_pos, col_pos;
+    /* Check if starting position is in subgraph. If so, use that as the generated room */
+    if((init_row_pos >= start_row && init_row_pos <= end_row) &&
+       (init_col_pos >= start_col && init_col_pos <= end_col)) {
+      row_pos = init_row_pos;
+      col_pos = init_col_pos;
+    }
+    else {
+      /* Otherwise, generate random position within row/col range */
+      row_pos = rng_random_int(start_row, end_row);
+      col_pos = rng_random_int(start_col, end_col);
+    }
+    /* Check if room is initialized, if not, generate new room.*/
+    if(!map[row_pos][col_pos].is_initialized) {
+      Room r = DEFAULT_ROOM;
+      char room_path[IMAGE_PATH_SIZE];
+      snprintf(room_path, sizeof(room_path), "../assets/forest_%d.png", (row_pos+col_pos)%9+1);
+      r = generate_room(row_pos, col_pos, room_path);
+      map[row_pos][col_pos] = r;
+    }
+    
+    /* Return selected room position, whether it be generated or selected */
+    return map[row_pos][col_pos];
+  } 
+  else {
+    bool vertical_splice = rng_percent_chance(0.5);
+    Room r1 = DEFAULT_ROOM;
+    Room r2 = DEFAULT_ROOM;
+    Room output = DEFAULT_ROOM;
+    int bisect_length;
+    /* Choose to splice the subtree vertically or horizontally, 50% chance either way */
+    if(vertical_splice) {
+      bisect_length = floor((end_row-start_row)/2);
+      //bisect_length = rng_random_int(2, (end_row - 2));
+      r1 = bsp_step(map, init_row_pos, init_col_pos, start_row, start_row+bisect_length, start_col, end_col);
+      r2 = bsp_step(map, init_row_pos, init_col_pos, start_row+bisect_length+1, end_row, start_col, end_col);
+    }
+    else {
+      bisect_length = floor((end_col-start_col)/2);
+      //bisect_length = rng_random_int(2, (end_col - 2));
+      r1 = bsp_step(map, init_row_pos, init_col_pos, start_row, end_row, start_col, start_col+bisect_length);
+      r2 = bsp_step(map, init_row_pos, init_col_pos, start_row, end_row, start_col+bisect_length+1, end_col);
+    }
+
+    /* Once the two subgraphs return, create a path between their generated rooms */
+    generate_path_between_rooms(map, r1.row_pos, r1.col_pos, r2.row_pos, r2.col_pos);
+
+    /* Randomly select one of the 2 connected rooms, and choose that as the output */
+    output = rng_percent_chance(0.5)? r1: r2;
+    return output;
+  }
+}
+
 void generate_floor(Floor* f, int start_row, int start_col) {
   /* Fill floor map with rooms:
   *  Current Algorithm is to create random points and connect them to the center. 
   */
-
   for(int i = 0; i < MAX_ROWS; ++i) {
     for(int j = 0; j < MAX_COLS; ++j) {
-      if((i == start_row && j == start_col) || rng_percent_chance(0.05)) {
-        char room_path[IMAGE_PATH_SIZE];
-        snprintf(room_path, sizeof(room_path), "../assets/forest_%d.png", (i+j)%9+1);
-        f->map[i][j] = generate_room(i, j, room_path);
-      } 
-      else {
         f->map[i][j] = DEFAULT_ROOM;
-      }
     }
   }
-
-  print_floor(f);
-  printf("-----------------------------------------------\n");
-
-  for(int i = 0; i < MAX_ROWS; ++i) {
-    for(int j = 0; j < MAX_COLS; ++j) {
-      if(f->map[i][j].is_initialized) {
-          generate_path_between_rooms(f->map, start_row, start_col, i, j);
-      }
-    }
-  }
-
+  bsp_step(f->map, start_row, start_col, 0, MAX_ROWS-1, 0, MAX_COLS-1);  
+  //bsp_step(f->map, start_row, start_col, 5, MAX_ROWS-5, 5, MAX_COLS-5); 
   link_rooms(f->map);
   print_floor(f);
 }

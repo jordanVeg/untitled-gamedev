@@ -11,8 +11,8 @@
 #define DOOR_HEIGHT (2 * PLAYER_HEIGHT)
 #define DOOR_WIDTH  32
 
-#define MAX_ROWS 10
-#define MAX_COLS 10
+#define MAX_ROWS 20
+#define MAX_COLS 20
 
 #define NUM_ROWS 3
 #define NUM_COLS 3
