@@ -17,7 +17,7 @@ Rogue-lite, but you're a wizard....who can write their own spells!
 - [x] Let's get Started!
     - [x] Open a window
     - [x] Game Loop
-- [ ] Map
+- [x] Map
     - [x] Load image library
     - [x] Use default image as basic map
     - [x] Create 'rooms' that can link together
@@ -25,7 +25,7 @@ Rogue-lite, but you're a wizard....who can write their own spells!
     - [x] Basic Room Generation
         - [x] Hardcoded
         - [x] Dynamic 
-    - [ ] Floor Generation
+    - [x] Floor Generation
       - [x] Simple/Hardcoded
       - [x] Dynamic
 - [ ] Character Control

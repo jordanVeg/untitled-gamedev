@@ -1,9 +1,9 @@
+#ifndef INCLUDE_TERRAIN_H
+  #define INCLUDE_TERRAIN_H
+
 #include "collisions.h"
 #include "player.h"
 #include "global.h"
-
-#ifndef INCLUDE_TERRAIN_H
-  #define INCLUDE_TERRAIN_H
 
 #define ID_SIZE         8
 #define IMAGE_PATH_SIZE 23

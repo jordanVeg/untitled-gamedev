@@ -38,7 +38,7 @@ int spawn_player(int start_x, int start_y, Player* p) {
     return OK;
 }
 
-void update_player(unsigned char key[], Player* p) {
+void update_player(unsigned char key[], Player* p, int max_px, int max_py) {
     /* Update speed based on Button press */
     if(key[ALLEGRO_KEY_W]) {
         p->vel_y = -p->speed;
@@ -53,8 +53,8 @@ void update_player(unsigned char key[], Player* p) {
         p->vel_x = p->speed;
     }
     /* Update position based on speed */
-    p->pos_x = constrain(0, SCREEN_WIDTH - PLAYER_WIDTH, (p->pos_x + p->vel_x));
-    p->pos_y = constrain(0, SCREEN_HEIGHT - PLAYER_HEIGHT,(p->pos_y + p->vel_y));
+    p->pos_x = constrain(0, max_px - PLAYER_WIDTH, (p->pos_x + p->vel_x));
+    p->pos_y = constrain(0, max_py - PLAYER_HEIGHT,(p->pos_y + p->vel_y));
     update_hitbox_position(&p->hb,  p->pos_x,  p->pos_y);
 
     /* Reset velocity to 0, so that the player doesnt move forever */

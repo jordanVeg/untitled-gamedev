@@ -36,8 +36,8 @@ const Room DEFAULT_ROOM = {
 
 Room generate_room(int row_pos, int col_pos, char image_path[IMAGE_PATH_SIZE]) {
     Room r = {
-      .width   = SCREEN_WIDTH,
-      .height  = SCREEN_HEIGHT,
+      .width   = 1280, //SCREEN_WIDTH,
+      .height  = 960, //SCREEN_HEIGHT,
       .row_pos = row_pos,
       .col_pos = col_pos,
       .map  = NULL,
@@ -100,7 +100,7 @@ Room* change_rooms(Room map[MAX_ROWS][MAX_COLS], Room* current_room, Player* p) 
   if(is_collision(&p->hb, &current_room->north_door) && map[curr_row-1][curr_col].is_initialized) {
     status = load_room(&map[curr_row-1][curr_col]);
     status = unload_room(current_room);
-    spawn_player(p->pos_x, SCREEN_HEIGHT - PLAYER_HEIGHT - DOOR_WIDTH - 1, p);
+    spawn_player(p->pos_x, map[curr_row-1][curr_col].height - PLAYER_HEIGHT - DOOR_WIDTH - 1, p);
     return &map[curr_row-1][curr_col];
   }
   /* Check for south door collision */
@@ -121,7 +121,7 @@ Room* change_rooms(Room map[MAX_ROWS][MAX_COLS], Room* current_room, Player* p) 
   else if(is_collision(&p->hb, &current_room->west_door) && map[curr_row][curr_col-1].is_initialized) {
     status = load_room(&map[curr_row][curr_col-1]);
     status = unload_room(current_room);
-    spawn_player(SCREEN_WIDTH-DOOR_WIDTH-PLAYER_WIDTH-1, p->pos_y, p);
+    spawn_player(map[curr_row][curr_col-1].width-DOOR_WIDTH-PLAYER_WIDTH-1, p->pos_y, p);
     return &map[curr_row][curr_col-1];
   }
   else {
@@ -135,32 +135,34 @@ void link_rooms(Room map[MAX_ROWS][MAX_COLS]) {
     for(int j = 0; j < MAX_COLS; ++j) {
       /* Verify room is initialized before trying to create doorways */
       if(map[i][j].is_initialized) {
-        /* North */
+        int room_width  = map[i][j].width;
+        int room_height = map[i][j].height;
+        /* North */        
         if(i > 0) {
           if(map[i-1][j].is_initialized) {
             //printf("found north room.\n");
-            create_hitbox(&map[i][j].north_door, SCREEN_WIDTH/2 - DOOR_HEIGHT/2, 0, DOOR_HEIGHT, DOOR_WIDTH);
+            create_hitbox(&map[i][j].north_door, room_width/2 - DOOR_HEIGHT/2, 0, DOOR_HEIGHT, DOOR_WIDTH);
           }
         }
         /* South */
         if(i < MAX_ROWS-1) {
           if(map[i+1][j].is_initialized) {
             //printf("found south room.\n");
-            create_hitbox(&map[i][j].south_door, SCREEN_WIDTH/2 - DOOR_HEIGHT/2, SCREEN_HEIGHT - DOOR_WIDTH, DOOR_HEIGHT, DOOR_WIDTH);
+            create_hitbox(&map[i][j].south_door, room_width/2 - DOOR_HEIGHT/2, room_height - DOOR_WIDTH, DOOR_HEIGHT, DOOR_WIDTH);
           }
         }
         /* East */
         if(j < MAX_COLS-1) {
           if(map[i][j+1].is_initialized) {
             //printf("found east room.\n");
-            create_hitbox(&map[i][j].east_door, SCREEN_WIDTH - DOOR_WIDTH, SCREEN_HEIGHT/2 - DOOR_HEIGHT/2, DOOR_WIDTH, DOOR_HEIGHT);
+            create_hitbox(&map[i][j].east_door, room_width - DOOR_WIDTH, room_height/2 - DOOR_HEIGHT/2, DOOR_WIDTH, DOOR_HEIGHT);
           }
         }
         /* West */
         if(j > 0) {
           if(map[i][j-1].is_initialized) {
             //printf("found west room.\n");
-            create_hitbox(&map[i][j].west_door, 0, SCREEN_HEIGHT/2 - DOOR_HEIGHT/2, DOOR_WIDTH, DOOR_HEIGHT);
+            create_hitbox(&map[i][j].west_door, 0, room_height/2 - DOOR_HEIGHT/2, DOOR_WIDTH, DOOR_HEIGHT);
           }
         }
       }      
@@ -173,16 +175,16 @@ void show_room(Room* r) {
 
   /* draw doors of the room as well.. */
   if(r->north_door.px != -1) {
-    al_draw_rotated_bitmap(r->door, 0, DOOR_HEIGHT/2, SCREEN_WIDTH/2, 0, ALLEGRO_PI/2, 0);
+    al_draw_rotated_bitmap(r->door, 0, DOOR_HEIGHT/2, r->width/2, 0, ALLEGRO_PI/2, 0);
   }
   if(r->south_door.px != -1) {
-    al_draw_rotated_bitmap(r->door, 0, DOOR_HEIGHT/2, SCREEN_WIDTH/2, SCREEN_HEIGHT - DOOR_WIDTH, ALLEGRO_PI/2, ALLEGRO_FLIP_HORIZONTAL);
+    al_draw_rotated_bitmap(r->door, 0, DOOR_HEIGHT/2, r->width/2, r->height - DOOR_WIDTH, ALLEGRO_PI/2, ALLEGRO_FLIP_HORIZONTAL);
   }
   if(r->east_door.px != -1) {
-    al_draw_bitmap(r->door, SCREEN_WIDTH - DOOR_WIDTH, SCREEN_HEIGHT/2 - DOOR_HEIGHT/2, ALLEGRO_FLIP_HORIZONTAL);
+    al_draw_bitmap(r->door, r->width - DOOR_WIDTH, r->height/2 - DOOR_HEIGHT/2, ALLEGRO_FLIP_HORIZONTAL);
   }
   if(r->west_door.px != -1) {
-    al_draw_bitmap(r->door, 0, SCREEN_HEIGHT/2 - DOOR_HEIGHT/2, 0);
+    al_draw_bitmap(r->door, 0, r->height/2 - DOOR_HEIGHT/2, 0);
   }
 }
 
@@ -316,7 +318,7 @@ Room bsp_step(Room map[MAX_ROWS][MAX_COLS],
 
 void generate_floor(Floor* f, int start_row, int start_col) {
   /* Fill floor map with rooms:
-  *  Current Algorithm is to create random points and connect them to the center. 
+  *  Current Algorithm is using Binary Space Partitioning with the caveat of a starting square.
   */
   for(int i = 0; i < MAX_ROWS; ++i) {
     for(int j = 0; j < MAX_COLS; ++j) {

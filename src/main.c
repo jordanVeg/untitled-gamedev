@@ -2,6 +2,7 @@
 #include <stdio.h>
 #include <stdbool.h>
 #include <stdlib.h>
+#include <math.h>
 
 /* Allegro Libraries */
 #include <allegro5/allegro5.h>              /* Base Allegro library */
@@ -22,6 +23,14 @@
 #define FPS          60.0
 
 bool show_dev_tools = false;
+
+void camera_update(float* cameraPosition, float x, float y, float width, float height, float x_max, float y_max) {
+    cameraPosition[0] = -(SCREEN_WIDTH / 2) + (x + width/2);
+    cameraPosition[1] = -(SCREEN_HEIGHT / 2) + (y + height/2);
+    
+    cameraPosition[0] = constrain_f(0, abs(x_max - SCREEN_WIDTH), cameraPosition[0]);
+    cameraPosition[1] = constrain_f(0, abs(y_max - SCREEN_HEIGHT), cameraPosition[1]);
+}
 
 int main(int argc, char** argv) {
 //    al_set_config_value(al_get_system_config(), "trace", "level", "debug");
@@ -67,10 +76,7 @@ int main(int argc, char** argv) {
     /* Initialize random number generator */
     rng_initialize();
     
-    /* Player Setup */
-    Player p;
-    int status = initialize_player(&p);
-    status += spawn_player(SCREEN_WIDTH/2 - PLAYER_WIDTH/2, SCREEN_HEIGHT/2 - PLAYER_HEIGHT/2, &p);
+    
 
     /* Floor & room setup*/
     Room* current_room;
@@ -81,14 +87,20 @@ int main(int argc, char** argv) {
 
     /* Testing out creating a hitbox */
     current_room = &f.map[start_row][start_col];
-    status += load_room(current_room);
+    int status = load_room(current_room);
+
+    /* Player Setup */
+    Player p;
+    status += initialize_player(&p);
+    status += spawn_player(current_room->width/2 - PLAYER_WIDTH/2, current_room->height/2 - PLAYER_HEIGHT/2, &p);
+
     if(status != OK) {
         printf("an error has occured. Exiting...");
         return ERROR;
     }
-    /* Hitbox testing */
-    Hitbox new_hb;
-    create_hitbox(&new_hb,  SCREEN_WIDTH/2 - DOOR_HEIGHT/2, SCREEN_HEIGHT - DOOR_WIDTH, DOOR_HEIGHT, DOOR_WIDTH);
+    /* Camera testing */
+    float cameraPosition[2] = {0, 0};
+    ALLEGRO_TRANSFORM camera;
 
     /* Game Loop */
     bool done = false;
@@ -102,12 +114,12 @@ int main(int argc, char** argv) {
         switch(event.type) {
             case ALLEGRO_EVENT_TIMER:
                 // game logic goes here.
-                update_player(key, &p);
-                /*
-                if(is_collision(&p.hb, &new_hb)) {
-                  printf("COLLISION DETECTED!\n");
-                }
-                */
+                update_player(key, &p, current_room->width, current_room->height);
+                camera_update(cameraPosition, p.pos_x, p.pos_y, p.width, p.height, current_room->width, current_room->height);
+                al_identity_transform(&camera);
+                al_translate_transform(&camera, -cameraPosition[0], -cameraPosition[1]);
+                al_use_transform(&camera);
+
                 if(is_collision(&p.hb, &current_room->north_door) ||
                    is_collision(&p.hb, &current_room->south_door) ||
                    is_collision(&p.hb, &current_room->east_door) ||
@@ -142,7 +154,6 @@ int main(int argc, char** argv) {
 
         if(redraw && al_is_event_queue_empty(queue)) {
             show_room(current_room);
-            //al_draw_rectangle(new_hb.px, new_hb.py, new_hb.px + new_hb.width, new_hb.py + new_hb.height, al_map_rgb(0, 0, 0), 10 );
             show_player(&p);
             if(show_dev_tools) {
               al_draw_textf(font, al_map_rgb(0, 0, 0), 0, 0, 0, "Player position. x: %d, y: %d", p.pos_x, p.pos_y);

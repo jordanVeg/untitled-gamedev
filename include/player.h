@@ -1,7 +1,7 @@
-#include "collisions.h" 
-
 #ifndef INCLUDE_PLAYER_H
   #define INCLUDE_PLAYER_H
+
+#include "collisions.h"
 
 #define PLAYER_WIDTH  64
 #define PLAYER_HEIGHT 64
@@ -33,7 +33,7 @@ int initialize_player(Player* p);
 
 int spawn_player(int start_x, int start_y, Player* p);
 
-void update_player(unsigned char key[], Player* p);
+void update_player(unsigned char key[], Player* p, int max_px, int max_py);
 
 void show_player(Player* p);
 
