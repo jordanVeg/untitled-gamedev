@@ -1,8 +1,8 @@
 #ifndef INCLUDE_GLOBAL_H
   #define INCLUDE_GLOBAL_H
 
-#define SCREEN_WIDTH  640 //1280
-#define SCREEN_HEIGHT 480 //960
+#define SCREEN_WIDTH  1280
+#define SCREEN_HEIGHT 960
 
 #define OK     0
 #define ERROR -1

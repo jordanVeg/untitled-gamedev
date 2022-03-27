@@ -5,7 +5,7 @@
 
 #define PLAYER_WIDTH  64
 #define PLAYER_HEIGHT 64
-#define PLAYER_SPEED  16
+#define PLAYER_SPEED  8
 
 /* Should help support animations later on */
 typedef enum {
@@ -24,8 +24,11 @@ typedef struct player {
     int vel_x;
     int vel_y;
     int speed;
+    int dir;
     Hitbox hb;
     STATE player_state;
+    int last_animation_frame;
+    float animation_tracker;
     ALLEGRO_BITMAP* sprite;
 } Player;
 
@@ -35,6 +38,6 @@ int spawn_player(int start_x, int start_y, Player* p);
 
 void update_player(unsigned char key[], Player* p, int max_px, int max_py);
 
-void show_player(Player* p);
+void show_player(Player* p, double delta_time);
 
 #endif

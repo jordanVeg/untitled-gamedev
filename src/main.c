@@ -23,6 +23,7 @@
 #define FPS          60.0
 
 bool show_dev_tools = false;
+int dev_tool_pos    = 16;
 
 void camera_update(float* cameraPosition, float x, float y, float width, float height, float x_max, float y_max) {
     cameraPosition[0] = -(SCREEN_WIDTH / 2) + (x + width/2);
@@ -76,16 +77,13 @@ int main(int argc, char** argv) {
     /* Initialize random number generator */
     rng_initialize();
     
-    
-
-    /* Floor & room setup*/
+    /* Floor & room setup */
     Room* current_room;
     Floor f;
     int start_row = MAX_ROWS/2;
     int start_col = MAX_COLS/2;
     generate_floor(&f, start_row, start_col);
 
-    /* Testing out creating a hitbox */
     current_room = &f.map[start_row][start_col];
     int status = load_room(current_room);
 
@@ -98,7 +96,8 @@ int main(int argc, char** argv) {
         printf("an error has occured. Exiting...");
         return ERROR;
     }
-    /* Camera testing */
+
+    /* Camera Setup */
     float cameraPosition[2] = {0, 0};
     ALLEGRO_TRANSFORM camera;
 
@@ -107,28 +106,46 @@ int main(int argc, char** argv) {
     bool redraw = true;
     ALLEGRO_EVENT event;
 
+    /* Variables to handle timer events */
+    double delta_time   = 0;
+    double fps          = 0;
+    double new_time     = 0;
+    double old_time     = al_get_time();
+
     al_start_timer(timer);
     while(1) {
         al_wait_for_event(queue, &event);
 
         switch(event.type) {
             case ALLEGRO_EVENT_TIMER:
-                // game logic goes here.
+                /* Update fps */
+                new_time = al_get_time();
+                delta_time = new_time - old_time;
+                fps = 1.0 / delta_time;
+                old_time = new_time;
+
+                /* Update Player info */
                 update_player(key, &p, current_room->width, current_room->height);
+
+                /* Update camera position and transform everything on the screen */
                 camera_update(cameraPosition, p.pos_x, p.pos_y, p.width, p.height, current_room->width, current_room->height);
                 al_identity_transform(&camera);
                 al_translate_transform(&camera, -cameraPosition[0], -cameraPosition[1]);
                 al_use_transform(&camera);
 
+                /* Check for door collisions to change rooms */
                 if(is_collision(&p.hb, &current_room->north_door) ||
                    is_collision(&p.hb, &current_room->south_door) ||
                    is_collision(&p.hb, &current_room->east_door) ||
                    is_collision(&p.hb, &current_room->west_door)) {
                   current_room = change_rooms(f.map, current_room, &p);
                 }
+                /* ESC key to exit game */
                 if(key[ALLEGRO_KEY_ESCAPE]) {
                     done = true;
+                    break;
                 }
+                /* T key to show dev tools */
                 if(key[ALLEGRO_KEY_T]) {
                   show_dev_tools = true;
                 }
@@ -154,9 +171,11 @@ int main(int argc, char** argv) {
 
         if(redraw && al_is_event_queue_empty(queue)) {
             show_room(current_room);
-            show_player(&p);
+            show_player(&p, delta_time);
             if(show_dev_tools) {
-              al_draw_textf(font, al_map_rgb(0, 0, 0), 0, 0, 0, "Player position. x: %d, y: %d", p.pos_x, p.pos_y);
+              al_draw_textf(font, al_map_rgb(0, 0, 0), 0, dev_tool_pos * 0, 0, "Player position. x: %d, y: %d", p.pos_x, p.pos_y);
+              al_draw_textf(font, al_map_rgb(0, 0, 0), 0, dev_tool_pos * 1, 0, "Current Room: %s", current_room->id);
+              al_draw_textf(font, al_map_rgb(0, 0, 0), 0, dev_tool_pos * 2, 0, "FPS: %f", fps);
             }
             al_flip_display();
 
