@@ -8,7 +8,7 @@
 #define ID_SIZE         8
 #define IMAGE_PATH_SIZE 23
 
-#define DOOR_HEIGHT (2 * PLAYER_HEIGHT)
+#define DOOR_HEIGHT 128
 #define DOOR_WIDTH  32
 
 #define MAX_ROWS 20

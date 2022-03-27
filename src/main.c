@@ -39,6 +39,7 @@ int main(int argc, char** argv) {
     /* Initialize everything */
     assert(al_init());                  /* Allegro environment */
     assert(al_install_keyboard());      /* Install Keyboard */
+    assert(al_install_mouse());         /* Install Mouse */
     assert(al_init_primitives_addon()); /* Initialize Primatives */
     assert(al_init_image_addon());      /* Initialize Image Library */
 
@@ -70,7 +71,15 @@ int main(int argc, char** argv) {
     unsigned char key[ALLEGRO_KEY_MAX];
     memset(key, 0, sizeof(key));
 
+    /* Mouse Stuff */
+    int mouseX = 0;
+    int mouseY = 0;
+    ALLEGRO_MOUSE_CURSOR* cursor  = al_create_mouse_cursor(al_load_bitmap("../assets/crosshair.png"), 0, 0);
+    al_set_mouse_cursor(disp, cursor);
+
+
     al_register_event_source(queue, al_get_keyboard_event_source());
+    al_register_event_source(queue, al_get_mouse_event_source());
     al_register_event_source(queue, al_get_display_event_source(disp));
     al_register_event_source(queue, al_get_timer_event_source(timer));
 
@@ -155,6 +164,10 @@ int main(int argc, char** argv) {
 
                 redraw = true;
                 break;
+            case ALLEGRO_EVENT_MOUSE_AXES:
+                mouseX = event.mouse.x;
+                mouseY = event.mouse.y;
+                break;
             case ALLEGRO_EVENT_KEY_DOWN:
                  key[event.keyboard.keycode] = KEY_SEEN | KEY_RELEASED;
                  break;
@@ -170,12 +183,14 @@ int main(int argc, char** argv) {
             break;
 
         if(redraw && al_is_event_queue_empty(queue)) {
+            al_clear_to_color(al_map_rgb(0, 0, 0));
             show_room(current_room);
             show_player(&p, delta_time);
             if(show_dev_tools) {
               al_draw_textf(font, al_map_rgb(0, 0, 0), 0, dev_tool_pos * 0, 0, "Player position. x: %d, y: %d", p.pos_x, p.pos_y);
               al_draw_textf(font, al_map_rgb(0, 0, 0), 0, dev_tool_pos * 1, 0, "Current Room: %s", current_room->id);
               al_draw_textf(font, al_map_rgb(0, 0, 0), 0, dev_tool_pos * 2, 0, "FPS: %f", fps);
+              al_draw_textf(font, al_map_rgb(0, 0, 0), 0, dev_tool_pos * 3, 0, "Mouse Position: %d, %d", mouseX, mouseY);
             }
             al_flip_display();
 
