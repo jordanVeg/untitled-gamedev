@@ -16,7 +16,7 @@
 #define MIN_SUBGRAPH_SIZE 2
 
 const Room DEFAULT_ROOM = {
-  -1,             /* width */ 
+  -1,             /* width */
   -1,             /* height */
   -1,             /* row position */
   -1,             /* column position */
@@ -28,10 +28,10 @@ const Room DEFAULT_ROOM = {
   false,          /* is_initialized */
   false,          /* is_loaded */
   false,          /* is_spawnable */
-  DEFAULT_HITBOX, /* north_door hitbox */
-  DEFAULT_HITBOX, /* south_door hitbox */
-  DEFAULT_HITBOX, /* east_door hitbox */
-  DEFAULT_HITBOX  /* west_door hitbox */
+  {-1,-1,0,0},//DEFAULT_HITBOX, /* north_door hitbox */
+  {-1,-1,0,0},//, /* south_door hitbox */
+  {-1,-1,0,0},//, /* east_door hitbox */
+  {-1,-1,0,0}//  /* west_door hitbox */
 };
 
 Room generate_room(int row_pos, int col_pos, char image_path[IMAGE_PATH_SIZE]) {
@@ -137,7 +137,7 @@ void link_rooms(Room map[MAX_ROWS][MAX_COLS]) {
       if(map[i][j].is_initialized) {
         int room_width  = map[i][j].width;
         int room_height = map[i][j].height;
-        /* North */        
+        /* North */
         if(i > 0) {
           if(map[i-1][j].is_initialized) {
             //printf("found north room.\n");
@@ -165,7 +165,7 @@ void link_rooms(Room map[MAX_ROWS][MAX_COLS]) {
             create_hitbox(&map[i][j].west_door, 0, room_height/2 - DOOR_HEIGHT/2, DOOR_WIDTH, DOOR_HEIGHT);
           }
         }
-      }      
+      }
     }
   }
 }
@@ -246,11 +246,11 @@ int generate_path_between_rooms(Room map[MAX_ROWS][MAX_COLS], int r1, int c1, in
 Room bsp_step(Room map[MAX_ROWS][MAX_COLS],
               int init_row_pos,
               int init_col_pos,
-              int start_row, 
-              int end_row, 
-              int start_col, 
+              int start_row,
+              int end_row,
+              int start_col,
               int end_col) {
-  /* 
+  /*
   * Here are the steps to the Binary Space Partitioning (BSP) algorithm:
   * 1. check if we are in exit condition
   *   -> if so, return a generated room within the range.
@@ -283,10 +283,10 @@ Room bsp_step(Room map[MAX_ROWS][MAX_COLS],
       r = generate_room(row_pos, col_pos, room_path);
       map[row_pos][col_pos] = r;
     }
-    
+
     /* Return selected room position, whether it be generated or selected */
     return map[row_pos][col_pos];
-  } 
+  }
   else {
     bool vertical_splice = rng_percent_chance(0.5);
     Room r1 = DEFAULT_ROOM;
@@ -325,8 +325,8 @@ void generate_floor(Floor* f, int start_row, int start_col) {
         f->map[i][j] = DEFAULT_ROOM;
     }
   }
-  bsp_step(f->map, start_row, start_col, 0, MAX_ROWS-1, 0, MAX_COLS-1);  
-  //bsp_step(f->map, start_row, start_col, 5, MAX_ROWS-5, 5, MAX_COLS-5); 
+  bsp_step(f->map, start_row, start_col, 0, MAX_ROWS-1, 0, MAX_COLS-1);
+  //bsp_step(f->map, start_row, start_col, 5, MAX_ROWS-5, 5, MAX_COLS-5);
   link_rooms(f->map);
   print_floor(f);
 }

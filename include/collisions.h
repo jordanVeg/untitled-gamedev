@@ -13,4 +13,4 @@ void update_hitbox_position(Hitbox* hb, int new_pos_x, int new_pos_y);
 
 bool is_collision(Hitbox* hb1, Hitbox* hb2);
 
-#endif 
+#endif
