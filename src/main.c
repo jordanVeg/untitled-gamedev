@@ -12,7 +12,7 @@
 
 /* local Libraries */
 #include "collisions.h"
-#include "player.h"
+#include "mob.h"
 #include "global.h"
 #include "terrain.h"
 #include "random.h"
@@ -97,10 +97,16 @@ int main(int argc, char** argv) {
     int status = load_room(current_room);
 
     /* Player Setup */
-    Player p;
+    Mob p;
     status += initialize_player(&p);
-    status += spawn_player(current_room->width/2 - PLAYER_WIDTH/2, current_room->height/2 - PLAYER_HEIGHT/2, &p);
+    status += spawn_mob(current_room->width/2 - PLAYER_WIDTH/2, current_room->height/2 - PLAYER_HEIGHT/2, &p);
 
+    /* Monster Testing */
+    Mob slime;
+    status += initialize_slime(&slime);
+    status += spawn_mob(rng_random_int((slime.width/2), (current_room->width - slime.width)),
+                        rng_random_int((slime.height/2), (current_room->height - slime.height)),
+                        &slime);
     if(status != OK) {
         printf("an error has occured. Exiting...");
         return ERROR;
@@ -134,10 +140,11 @@ int main(int argc, char** argv) {
                 old_time = new_time;
 
                 /* Update Player info */
-                update_player(key, &p, current_room->width, current_room->height);
+                p.update(key, &p, current_room->width, current_room->height);
+                slime.update(NULL, &slime, current_room-> width, current_room->height);
 
                 /* Update camera position and transform everything on the screen */
-                camera_update(cameraPosition, p.pos_x, p.pos_y, p.width, p.height, current_room->width, current_room->height);
+                camera_update(cameraPosition, p.position[0], p.position[1], p.width, p.height, current_room->width, current_room->height);
                 al_identity_transform(&camera);
                 al_translate_transform(&camera, -cameraPosition[0], -cameraPosition[1]);
                 al_use_transform(&camera);
@@ -185,9 +192,10 @@ int main(int argc, char** argv) {
         if(redraw && al_is_event_queue_empty(queue)) {
             al_clear_to_color(al_map_rgb(0, 0, 0));
             show_room(current_room);
-            show_player(&p, delta_time);
+            slime.draw(&slime, delta_time);
+            p.draw(&p, delta_time);
             if(show_dev_tools) {
-              al_draw_textf(font, al_map_rgb(0, 0, 0), 0, dev_tool_pos * 0, 0, "Player position. x: %d, y: %d", p.pos_x, p.pos_y);
+              al_draw_textf(font, al_map_rgb(0, 0, 0), 0, dev_tool_pos * 0, 0, "Player position. x: %d, y: %d", p.position[0], p.position[1]);
               al_draw_textf(font, al_map_rgb(0, 0, 0), 0, dev_tool_pos * 1, 0, "Current Room: %s", current_room->id);
               al_draw_textf(font, al_map_rgb(0, 0, 0), 0, dev_tool_pos * 2, 0, "FPS: %f", fps);
               al_draw_textf(font, al_map_rgb(0, 0, 0), 0, dev_tool_pos * 3, 0, "Mouse Position: %d, %d", mouseX, mouseY);

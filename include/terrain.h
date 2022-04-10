@@ -2,7 +2,7 @@
   #define INCLUDE_TERRAIN_H
 
 #include "collisions.h"
-#include "player.h"
+#include "mob.h"
 #include "global.h"
 
 #define ID_SIZE         8
@@ -56,7 +56,7 @@ int load_room(Room* r);
 
 int unload_room(Room* r);
 
-Room* change_rooms(Room map[MAX_ROWS][MAX_COLS], Room* current_room, Player* p);
+Room* change_rooms(Room map[MAX_ROWS][MAX_COLS], Room* current_room, Mob* p);
 
 void link_rooms(Room map[MAX_ROWS][MAX_COLS]);
 
