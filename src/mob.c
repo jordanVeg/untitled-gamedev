@@ -53,58 +53,34 @@ void update_player(unsigned char key[], Mob* p, int max_px, int max_py) {
     
 }
 
-void draw_player(Mob* p, double delta_time) {
+void draw_mob(Mob* m, double delta_time) {
     /* Draw player */
     int sourceX = 0;
     int sourceY = 0;
-    float animation_update_time = (1.0 / PLAYER_ANIMATION_FPS);
-    p->animation_tracker += delta_time;
-    switch(p->current_state) {
+    float animation_update_time = (1.0 / m->speed);
+    m->animation_tracker += delta_time;
+    switch(m->current_state) {
         case IDLE:
             sourceY = 0;
             break;
         case RUNNING:
-            sourceY = p->height;
+            sourceY = m->height;
             break;
         default:
             sourceX = 0;
             sourceY = 0;
             break;
     }
-    if(p->animation_tracker >= animation_update_time) {
-        sourceX = (p->last_animation_frame + p->width);
-        sourceX = (sourceX >= p->width*4) ? 0 : sourceX;
-        p->animation_tracker = 0.0;
+    if(m->animation_tracker >= animation_update_time) {
+        sourceX = (m->last_animation_frame + m->width);
+        sourceX = (sourceX >= m->width*4) ? 0 : sourceX;
+        m->animation_tracker = 0.0;
     } else {
-        sourceX = p->last_animation_frame;
+        sourceX = m->last_animation_frame;
     }
-    int flip_flag = p->dir == 0 ? 0 : ALLEGRO_FLIP_HORIZONTAL;
-    al_draw_bitmap_region(p->sprite, sourceX, sourceY, p->width, p->height, p->position[0], p->position[1], flip_flag );
-    p->last_animation_frame = sourceX;
-}
-
-int initialize_player(Mob* p) {
-  p->position[0] = 0;
-  p->position[1] = 0;
-  p->width = PLAYER_WIDTH;
-  p->height = PLAYER_HEIGHT;
-  p->vel_x = 0;
-  p->vel_y = 0;
-  p->speed = PLAYER_SPEED;
-  p->current_state = IDLE;
-  p->dir = 0;
-  p->type = PLAYER;
-  create_hitbox(&p->hb, 0, 0, PLAYER_WIDTH, PLAYER_HEIGHT);
-  p->last_animation_frame = 0;
-  p->animation_tracker = 0.0;
-  p->sprite = al_load_bitmap("../assets/wizard.png");
-  if(!p->sprite) {
-      printf("Error loading player sprite!\n");
-      return ERROR;
-  }
-  p->update = update_player;
-  p->draw = draw_player;
-  return OK;
+    int flip_flag = m->dir == 0 ? 0 : ALLEGRO_FLIP_HORIZONTAL;
+    al_draw_bitmap_region(m->sprite, sourceX, sourceY, m->width, m->height, m->position[0], m->position[1], flip_flag );
+    m->last_animation_frame = sourceX;
 }
 
 void update_slime(unsigned char key[], Mob* slime, int max_px, int max_py) {
@@ -120,28 +96,42 @@ void draw_slime(Mob* slime, double delta_time) {
     al_draw_bitmap(slime->sprite, slime->position[0], slime->position[1], 0);
 }
 
-int initialize_slime(Mob* m) {
+int initialize_mob(Mob* m, MOB_TYPE type) {
     m->position[0] = 0;
     m->position[1] = 0;
-    m->width = 32;
-    m->height = 32;
     m->vel_x = 0;
     m->vel_y = 0;
-    m->speed = 4;
     m->current_state = IDLE;
     m->dir = 0;
-    m->type = SLIME;
-    create_hitbox(&m->hb, 0, 0, 32, 32);
+    m->type = type;
     m->last_animation_frame = 0;
     m->animation_tracker = 0.0;
-    m->sprite = al_load_bitmap("../assets/slime.png");
+
+    switch(type){
+        case PLAYER:
+            m->width = PLAYER_WIDTH;
+            m->height = PLAYER_HEIGHT;
+            m->speed = PLAYER_SPEED;
+            m->sprite = al_load_bitmap("../assets/wizard.png");
+            m->update = update_player;
+            m->draw = draw_mob;
+            break;
+        case SLIME:
+            m->width = 32;
+            m->height = 32;
+            m->speed = 6;
+            m->sprite = al_load_bitmap("../assets/slime.png");
+            m->update = update_slime;
+            m->draw = draw_mob;   
+            break;
+    }
+    
     if(!m->sprite) {
-        printf("Error loading slime sprite!\n");
+        printf("Error loading sprite!\n");
         return ERROR;
     }
-    m->update = update_slime;
-    m->draw = draw_slime;
-    return OK;  
+    create_hitbox(&m->hb, 0, 0, m->width, m->height);
+    return OK;
 }
 
 

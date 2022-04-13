@@ -98,12 +98,12 @@ int main(int argc, char** argv) {
 
     /* Player Setup */
     Mob p;
-    status += initialize_player(&p);
+    status += initialize_mob(&p, PLAYER);
     status += spawn_mob(current_room->width/2 - PLAYER_WIDTH/2, current_room->height/2 - PLAYER_HEIGHT/2, &p);
 
     /* Monster Testing */
     Mob slime;
-    status += initialize_slime(&slime);
+    status += initialize_mob(&slime, SLIME);
     status += spawn_mob(rng_random_int((slime.width/2), (current_room->width - slime.width)),
                         rng_random_int((slime.height/2), (current_room->height - slime.height)),
                         &slime);

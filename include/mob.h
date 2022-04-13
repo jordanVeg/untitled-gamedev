@@ -42,8 +42,6 @@ typedef struct mob {
 
 int spawn_mob(int spawn_x, int spawn_y, Mob* mob);
 
-int initialize_player(Mob* p);
-
-int initialize_slime(Mob* m);
+int initialize_mob(Mob* m, MOB_TYPE type);
 
 #endif
