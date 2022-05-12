@@ -3,6 +3,16 @@
 
 #include "collisions.h"
 
+Hitbox default_hitbox() {
+  Hitbox hb = {
+    .px     = -1,
+    .py     = -1,
+    .width  = -1,
+    .height = -1
+  };
+  return hb;
+}
+
 void create_hitbox(Hitbox* hb, int x, int y, int width, int height) {
   hb->px     = x;
   hb->py     = y;

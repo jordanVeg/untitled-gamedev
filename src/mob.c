@@ -13,6 +13,25 @@
 
 #define PLAYER_ANIMATION_FPS 8
 
+Mob default_mob() {
+    Mob mob = {
+        .position               = {-1},
+        .id                     = -1,
+        .width                  = -1,
+        .height                 = -1,
+        .vel_x                  = -1,
+        .vel_y                  = -1,
+        .speed                  = -1,
+        .dir                    = -1,
+        .type                   = DEFAULT,
+        .hb                     = default_hitbox(),
+        .current_state          = IDLE,
+        .last_animation_frame   = -1,
+        .animation_tracker      = -1,
+        .sprite                 = NULL
+    };
+    return mob;
+}
 int spawn_mob(int spawn_x, int spawn_y, Mob* mob) {
     mob->position[0] = spawn_x;
     mob->position[1] = spawn_y;
@@ -96,9 +115,10 @@ void draw_slime(Mob* slime, double delta_time) {
     al_draw_bitmap(slime->sprite, slime->position[0], slime->position[1], 0);
 }
 
-int initialize_mob(Mob* m, MOB_TYPE type) {
+int initialize_mob(Mob* m, MOB_TYPE type, int id) {
     m->position[0] = 0;
     m->position[1] = 0;
+    m->id = id;
     m->vel_x = 0;
     m->vel_y = 0;
     m->current_state = IDLE;
@@ -124,9 +144,17 @@ int initialize_mob(Mob* m, MOB_TYPE type) {
             m->update = update_slime;
             m->draw = draw_mob;   
             break;
+        default:
+            m->width = 0;
+            m->height = 0;
+            m->speed = 0;
+            m->sprite = NULL;
+            m->update = update_slime;
+            m->draw = draw_mob;
+            break;
     }
     
-    if(!m->sprite) {
+    if(!m->sprite && type != DEFAULT) {
         printf("Error loading sprite!\n");
         return ERROR;
     }

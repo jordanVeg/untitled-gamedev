@@ -15,24 +15,29 @@
 
 #define MIN_SUBGRAPH_SIZE 2
 
-const Room DEFAULT_ROOM = {
-  -1,             /* width */
-  -1,             /* height */
-  -1,             /* row position */
-  -1,             /* column position */
-  {""},           /* id string */
-  {""},           /* background image path string */
-  NULL,           /* ALLEGRO_BITMAP* map */
-  NULL,           /* ALLEGRO_BITMAP* door */
-  EMPTY,          /* room type */
-  false,          /* is_initialized */
-  false,          /* is_loaded */
-  false,          /* is_spawnable */
-  {-1,-1,0,0},//DEFAULT_HITBOX, /* north_door hitbox */
-  {-1,-1,0,0},//, /* south_door hitbox */
-  {-1,-1,0,0},//, /* east_door hitbox */
-  {-1,-1,0,0}//  /* west_door hitbox */
-};
+Room default_room() {
+  Room room = {
+    -1,             /* width */
+    -1,             /* height */
+    -1,             /* row position */
+    -1,             /* column position */
+    {""},           /* id string */
+    {""},           /* background image path string */
+    NULL,           /* ALLEGRO_BITMAP* map */
+    NULL,           /* ALLEGRO_BITMAP* door */
+    EMPTY,          /* room type */
+    false,          /* is_initialized */
+    false,          /* is_loaded */
+    false,          /* is_spawnable */
+    {0, 0, 0, 0},     /* in room_configuration */
+    default_hitbox(),    /* north_door hitbox */
+    default_hitbox(),    /* south_door hitbox */
+    default_hitbox(),     /* east_door hitbox */
+    default_hitbox()//,     /* west_door hitbox */
+    //default_mob_handler() /* MOB_HANDLER */
+  };
+  return room;
+}
 
 Room generate_room(int row_pos, int col_pos, char image_path[IMAGE_PATH_SIZE]) {
     Room r = {
@@ -46,10 +51,11 @@ Room generate_room(int row_pos, int col_pos, char image_path[IMAGE_PATH_SIZE]) {
       .is_initialized = true,
       .is_loaded = false,
       .is_spawnable = false,
-      .north_door = DEFAULT_HITBOX,
-      .south_door = DEFAULT_HITBOX,
-      .east_door = DEFAULT_HITBOX,
-      .west_door = DEFAULT_HITBOX
+      .north_door = default_hitbox(),
+      .south_door = default_hitbox(),
+      .east_door = default_hitbox(),
+      .west_door = default_hitbox()//,
+      //.mob_handler = default_mob_handler()
     };
 
     /* generate id as row-col, always set to be 3 chars on each side of the dash */
@@ -142,6 +148,7 @@ void link_rooms(Room map[MAX_ROWS][MAX_COLS]) {
           if(map[i-1][j].is_initialized) {
             //printf("found north room.\n");
             create_hitbox(&map[i][j].north_door, room_width/2 - DOOR_HEIGHT/2, 0, DOOR_HEIGHT, DOOR_WIDTH);
+            map[i][j].room_configuration[0] = 1;
           }
         }
         /* South */
@@ -149,6 +156,7 @@ void link_rooms(Room map[MAX_ROWS][MAX_COLS]) {
           if(map[i+1][j].is_initialized) {
             //printf("found south room.\n");
             create_hitbox(&map[i][j].south_door, room_width/2 - DOOR_HEIGHT/2, room_height - DOOR_WIDTH, DOOR_HEIGHT, DOOR_WIDTH);
+            map[i][j].room_configuration[1] = 1;
           }
         }
         /* East */
@@ -156,6 +164,7 @@ void link_rooms(Room map[MAX_ROWS][MAX_COLS]) {
           if(map[i][j+1].is_initialized) {
             //printf("found east room.\n");
             create_hitbox(&map[i][j].east_door, room_width - DOOR_WIDTH, room_height/2 - DOOR_HEIGHT/2, DOOR_WIDTH, DOOR_HEIGHT);
+            map[i][j].room_configuration[2] = 1;
           }
         }
         /* West */
@@ -163,6 +172,7 @@ void link_rooms(Room map[MAX_ROWS][MAX_COLS]) {
           if(map[i][j-1].is_initialized) {
             //printf("found west room.\n");
             create_hitbox(&map[i][j].west_door, 0, room_height/2 - DOOR_HEIGHT/2, DOOR_WIDTH, DOOR_HEIGHT);
+            map[i][j].room_configuration[3] = 1;
           }
         }
       }
@@ -173,17 +183,17 @@ void link_rooms(Room map[MAX_ROWS][MAX_COLS]) {
 void show_room(Room* r) {
   al_draw_bitmap(r->map, 0, 0, 0);
 
-  /* draw doors of the room as well.. */
-  if(r->north_door.px != -1) {
+  /* draw doors of the room as well in order: N, S, E, W */
+  if(r->room_configuration[0] == 1) {
     al_draw_rotated_bitmap(r->door, 0, DOOR_HEIGHT/2, r->width/2, 0, ALLEGRO_PI/2, 0);
   }
-  if(r->south_door.px != -1) {
+  if(r->room_configuration[1] == 1) {
     al_draw_rotated_bitmap(r->door, 0, DOOR_HEIGHT/2, r->width/2, r->height - DOOR_WIDTH, ALLEGRO_PI/2, ALLEGRO_FLIP_HORIZONTAL);
   }
-  if(r->east_door.px != -1) {
+  if(r->room_configuration[2] == 1) {
     al_draw_bitmap(r->door, r->width - DOOR_WIDTH, r->height/2 - DOOR_HEIGHT/2, ALLEGRO_FLIP_HORIZONTAL);
   }
-  if(r->west_door.px != -1) {
+  if(r->room_configuration[3] == 1) {
     al_draw_bitmap(r->door, 0, r->height/2 - DOOR_HEIGHT/2, 0);
   }
 }
@@ -277,7 +287,7 @@ Room bsp_step(Room map[MAX_ROWS][MAX_COLS],
     }
     /* Check if room is initialized, if not, generate new room.*/
     if(!map[row_pos][col_pos].is_initialized) {
-      Room r = DEFAULT_ROOM;
+      Room r = default_room();
       char room_path[IMAGE_PATH_SIZE];
       snprintf(room_path, sizeof(room_path), "../assets/forest_%d.png", (row_pos+col_pos)%9+1);
       r = generate_room(row_pos, col_pos, room_path);
@@ -289,11 +299,15 @@ Room bsp_step(Room map[MAX_ROWS][MAX_COLS],
   }
   else {
     bool vertical_splice = rng_percent_chance(0.5);
-    Room r1 = DEFAULT_ROOM;
-    Room r2 = DEFAULT_ROOM;
-    Room output = DEFAULT_ROOM;
+    Room r1 = default_room();
+    Room r2 = default_room();
+    Room output = default_room();
     int bisect_length;
     /* Choose to splice the subtree vertically or horizontally, 50% chance either way */
+    /*
+    * TODO: right now each section bisects in half perfectly, it may be intersting to
+    * have a more dynamic system...
+    */
     if(vertical_splice) {
       bisect_length = floor((end_row-start_row)/2);
       //bisect_length = rng_random_int(2, (end_row - 2));
@@ -322,9 +336,14 @@ void generate_floor(Floor* f, int start_row, int start_col) {
   */
   for(int i = 0; i < MAX_ROWS; ++i) {
     for(int j = 0; j < MAX_COLS; ++j) {
-        f->map[i][j] = DEFAULT_ROOM;
+        f->map[i][j] = default_room();
     }
   }
+  /*
+  * TODO: For future implementations, I would like to scale how large the floor
+  * can be. To do this I will need some way of altering inputs 5 and 7 to the 
+  * bsp step algorithm, which should increased based on floor number.
+  */
   bsp_step(f->map, start_row, start_col, 0, MAX_ROWS-1, 0, MAX_COLS-1);
   //bsp_step(f->map, start_row, start_col, 5, MAX_ROWS-5, 5, MAX_COLS-5);
   link_rooms(f->map);

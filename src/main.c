@@ -16,6 +16,7 @@
 #include "global.h"
 #include "terrain.h"
 #include "random.h"
+#include "mob_handler.h"
 
 #define KEY_SEEN     1
 #define KEY_RELEASED 2
@@ -98,12 +99,12 @@ int main(int argc, char** argv) {
 
     /* Player Setup */
     Mob p;
-    status += initialize_mob(&p, PLAYER);
+    status += initialize_mob(&p, PLAYER, 0);
     status += spawn_mob(current_room->width/2 - PLAYER_WIDTH/2, current_room->height/2 - PLAYER_HEIGHT/2, &p);
 
     /* Monster Testing */
     Mob slime;
-    status += initialize_mob(&slime, SLIME);
+    status += initialize_mob(&slime, SLIME, 1);
     status += spawn_mob(rng_random_int((slime.width/2), (current_room->width - slime.width)),
                         rng_random_int((slime.height/2), (current_room->height - slime.height)),
                         &slime);
@@ -112,6 +113,12 @@ int main(int argc, char** argv) {
         return ERROR;
     }
 
+    /* Testing some Handler Action! */
+    MOB_HANDLER mh = default_mob_handler();
+    initialize_handler(&mh, 10);
+
+    add_mob(&mh, slime);
+    printf("Mob Handler mob count: %d\n", mh.mob_count);
     /* Camera Setup */
     float cameraPosition[2] = {0, 0};
     ALLEGRO_TRANSFORM camera;
@@ -141,7 +148,12 @@ int main(int argc, char** argv) {
 
                 /* Update Player info */
                 p.update(key, &p, current_room->width, current_room->height);
-                slime.update(NULL, &slime, current_room-> width, current_room->height);
+                for(int i = 0; i < mh.local_max_mobs; i++) {
+                    if(mh.mobs[i].type != DEFAULT) {
+                        mh.mobs[i].update(NULL, &mh.mobs[i], current_room-> width, current_room->height);
+                    }
+                }
+                //slime.update(NULL, &slime, current_room-> width, current_room->height);
 
                 /* Update camera position and transform everything on the screen */
                 camera_update(cameraPosition, p.position[0], p.position[1], p.width, p.height, current_room->width, current_room->height);
@@ -164,6 +176,17 @@ int main(int argc, char** argv) {
                 /* T key to show dev tools */
                 if(key[ALLEGRO_KEY_T]) {
                   show_dev_tools = true;
+                }
+
+                /* Testing killing a mob to remove it from the handler */
+                if(key[ALLEGRO_KEY_K]) {
+                    if(mh.mob_count == 1) {
+                        remove_mob(&mh, slime);
+                    }
+                    else {
+                        add_mob(&mh, slime);
+                    }
+                  
                 }
                 for(int i = 0; i < ALLEGRO_KEY_MAX; i++) {
                     key[i] &= KEY_SEEN;
@@ -192,7 +215,12 @@ int main(int argc, char** argv) {
         if(redraw && al_is_event_queue_empty(queue)) {
             al_clear_to_color(al_map_rgb(0, 0, 0));
             show_room(current_room);
-            slime.draw(&slime, delta_time);
+            for(int i = 0; i < mh.local_max_mobs; i++) {
+                if(mh.mobs[i].type != DEFAULT) {
+                    mh.mobs[i].draw(&mh.mobs[i], delta_time);
+                }
+            }
+            //slime.draw(&slime, delta_time);
             p.draw(&p, delta_time);
             if(show_dev_tools) {
               al_draw_textf(font, al_map_rgb(0, 0, 0), 0, dev_tool_pos * 0, 0, "Player position. x: %d, y: %d", p.position[0], p.position[1]);

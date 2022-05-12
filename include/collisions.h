@@ -1,11 +1,11 @@
 #ifndef INCLUDE_COLLISIONS_H
-  #define INCLUDE_COLLISIONS_H
+#define INCLUDE_COLLISIONS_H
 
 typedef struct hitbox {
   int px, py, width, height;
 } Hitbox;
 
-static const Hitbox DEFAULT_HITBOX = {-1, -1, 0, 0};
+Hitbox default_hitbox();
 
 void create_hitbox(Hitbox* hb, int x, int y, int width, int height);
 

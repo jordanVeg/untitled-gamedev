@@ -1,9 +1,10 @@
 #ifndef INCLUDE_TERRAIN_H
-  #define INCLUDE_TERRAIN_H
+#define INCLUDE_TERRAIN_H
 
 #include "collisions.h"
 #include "mob.h"
 #include "global.h"
+#include "mob_handler.h"
 
 #define ID_SIZE         8
 #define IMAGE_PATH_SIZE 23
@@ -41,8 +42,9 @@ typedef struct room {
     * door array: {north, south, east, west}, I dont think it makes
     * much sense to create door hitboxes that dont actually exist...
     */
-
+    int room_configuration[4];
     Hitbox north_door, south_door, east_door, west_door;
+    //MOB_HANDLER mob_handler;
 } Room;
 
 typedef struct floor {

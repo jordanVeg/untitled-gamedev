@@ -1,5 +1,5 @@
 #ifndef INCLUDE_MOB_H
-  #define INCLUDE_MOB_H
+#define INCLUDE_MOB_H
 
 #include "collisions.h"
 
@@ -8,7 +8,7 @@
 #define PLAYER_SPEED  8
 
 /* Should help support animations later on */
-typedef enum {
+typedef enum animation_state {
     IDLE,
     RUNNING,
     DASH,
@@ -16,13 +16,15 @@ typedef enum {
     DEAD
 } STATE;
 
-typedef enum {
+typedef enum mob_type {
+  DEFAULT,
   PLAYER,
   SLIME
 } MOB_TYPE;
 
 typedef struct mob {
     int position[2];
+    int id;
     int width;
     int height;
     int vel_x;
@@ -40,8 +42,10 @@ typedef struct mob {
     void (*draw)(struct mob* self, double delta_time);
 } Mob;
 
+Mob default_mob();
+
 int spawn_mob(int spawn_x, int spawn_y, Mob* mob);
 
-int initialize_mob(Mob* m, MOB_TYPE type);
+int initialize_mob(Mob* m, MOB_TYPE type, int id);
 
 #endif
