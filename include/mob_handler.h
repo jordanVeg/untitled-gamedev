@@ -11,7 +11,6 @@
 #include "global.h"
 
 #define ABSOLUTE_MAX_MOBS 100
-//#define DEFAULT_MOB_HANDLER {(DEFAULT_MOB), 0, 0}
 
 typedef struct mob_handler {
     Mob mobs[ABSOLUTE_MAX_MOBS];
@@ -25,6 +24,12 @@ void initialize_handler(MOB_HANDLER* handler, int max_mobs);
 
 int add_mob(MOB_HANDLER* handler, Mob mob);
 
-int remove_mob(MOB_HANDLER* handler, Mob mob);
+int remove_mob(MOB_HANDLER* handler, Mob* mob);
+
+void update_all_active_mobs(MOB_HANDLER* handler, int max_px, int max_py);
+
+void draw_all_active_mobs(MOB_HANDLER* handler, double delta_time);
+
+void spawn_mobs(MOB_HANDLER* handler, int max_px, int max_py, int floor_number);
 
 #endif

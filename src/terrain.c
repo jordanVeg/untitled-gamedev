@@ -106,28 +106,28 @@ Room* change_rooms(Room map[MAX_ROWS][MAX_COLS], Room* current_room, Mob* p) {
   if(is_collision(&p->hb, &current_room->north_door) && map[curr_row-1][curr_col].is_initialized) {
     status = load_room(&map[curr_row-1][curr_col]);
     status = unload_room(current_room);
-    spawn_mob(p->position[0], map[curr_row-1][curr_col].height - PLAYER_HEIGHT - DOOR_WIDTH - 1, p);
+    move_mob(p, p->position[0], map[curr_row-1][curr_col].height - PLAYER_HEIGHT - DOOR_WIDTH - 1);
     return &map[curr_row-1][curr_col];
   }
   /* Check for south door collision */
   else if(is_collision(&p->hb, &current_room->south_door) && map[curr_row+1][curr_col].is_initialized) {
     status = load_room(&map[curr_row+1][curr_col]);
     status = unload_room(current_room);
-    spawn_mob(p->position[0], DOOR_WIDTH + 1, p);
+    move_mob(p, p->position[0], DOOR_WIDTH + 1);
     return &map[curr_row+1][curr_col];
   }
   /* Check for east door collision */
   else if(is_collision(&p->hb, &current_room->east_door) && map[curr_row][curr_col+1].is_initialized) {
     status = load_room(&map[curr_row][curr_col+1]);
     status = unload_room(current_room);
-    spawn_mob(1 + DOOR_WIDTH, p->position[1], p);
+    move_mob(p, 1 + DOOR_WIDTH, p->position[1]);
     return &map[curr_row][curr_col+1];
   }
   /* Check for west door collision */
   else if(is_collision(&p->hb, &current_room->west_door) && map[curr_row][curr_col-1].is_initialized) {
     status = load_room(&map[curr_row][curr_col-1]);
     status = unload_room(current_room);
-    spawn_mob(map[curr_row][curr_col-1].width-DOOR_WIDTH-PLAYER_WIDTH-1, p->position[1], p);
+    move_mob(p, map[curr_row][curr_col-1].width-DOOR_WIDTH-PLAYER_WIDTH-1, p->position[1]);
     return &map[curr_row][curr_col-1];
   }
   else {

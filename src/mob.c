@@ -32,13 +32,6 @@ Mob default_mob() {
     };
     return mob;
 }
-int spawn_mob(int spawn_x, int spawn_y, Mob* mob) {
-    mob->position[0] = spawn_x;
-    mob->position[1] = spawn_y;
-
-    update_hitbox_position(&mob->hb,  mob->position[0],  mob->position[1]);
-    return OK;
-}
 
 void update_player(unsigned char key[], Mob* p, int max_px, int max_py) {
     /* Update speed based on Button press */
@@ -115,51 +108,57 @@ void draw_slime(Mob* slime, double delta_time) {
     al_draw_bitmap(slime->sprite, slime->position[0], slime->position[1], 0);
 }
 
-int initialize_mob(Mob* m, MOB_TYPE type, int id) {
-    m->position[0] = 0;
-    m->position[1] = 0;
-    m->id = id;
-    m->vel_x = 0;
-    m->vel_y = 0;
-    m->current_state = IDLE;
-    m->dir = 0;
-    m->type = type;
-    m->last_animation_frame = 0;
-    m->animation_tracker = 0.0;
+Mob initialize_mob( MOB_TYPE type, int id, int start_x, int start_y) {
+    Mob m;
+    m.position[0]          = start_x;
+    m.position[1]          = start_y;
+    m.id                   = id;
+    m.vel_x                = 0;
+    m.vel_y                = 0;
+    m.current_state        = IDLE;
+    m.dir                  = 0;
+    m.type                 = type;
+    m.last_animation_frame = 0;
+    m.animation_tracker    = 0.0;
 
     switch(type){
         case PLAYER:
-            m->width = PLAYER_WIDTH;
-            m->height = PLAYER_HEIGHT;
-            m->speed = PLAYER_SPEED;
-            m->sprite = al_load_bitmap("../assets/wizard.png");
-            m->update = update_player;
-            m->draw = draw_mob;
+            m.width  = PLAYER_WIDTH;
+            m.height = PLAYER_HEIGHT;
+            m.speed  = PLAYER_SPEED;
+            m.sprite = al_load_bitmap("../assets/wizard.png");
+            m.update = update_player;
+            m.draw   = draw_mob;
             break;
         case SLIME:
-            m->width = 32;
-            m->height = 32;
-            m->speed = 6;
-            m->sprite = al_load_bitmap("../assets/slime.png");
-            m->update = update_slime;
-            m->draw = draw_mob;   
+            m.width  = 32;
+            m.height = 32;
+            m.speed  = rng_random_int(6, 10);
+            m.sprite = al_load_bitmap("../assets/slime.png");
+            m.update = update_slime;
+            m.draw   = draw_mob;   
             break;
         default:
-            m->width = 0;
-            m->height = 0;
-            m->speed = 0;
-            m->sprite = NULL;
-            m->update = update_slime;
-            m->draw = draw_mob;
+            m.width  = 0;
+            m.height = 0;
+            m.speed  = 0;
+            m.sprite = NULL;
+            m.update = update_slime;
+            m.draw   = draw_mob;
             break;
     }
     
-    if(!m->sprite && type != DEFAULT) {
+    if(!m.sprite && type != DEFAULT) {
         printf("Error loading sprite!\n");
-        return ERROR;
     }
-    create_hitbox(&m->hb, 0, 0, m->width, m->height);
-    return OK;
+    create_hitbox(&m.hb, m.position[0], m.position[1], m.width, m.height);
+    return m;
+}
+
+void move_mob(Mob* mob, int new_xpos, int new_ypos) {
+    mob->position[0] = new_xpos;
+    mob->position[1] = new_ypos;
+    update_hitbox_position(&mob->hb,  mob->position[0],  mob->position[1]);
 }
 
 

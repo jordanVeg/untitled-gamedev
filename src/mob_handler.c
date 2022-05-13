@@ -1,4 +1,7 @@
+#include <stdio.h>
+#include <string.h>
 #include "mob_handler.h"
+#include "random.h"
 
 MOB_HANDLER default_mob_handler() {
     MOB_HANDLER mob_handler = {
@@ -14,14 +17,13 @@ MOB_HANDLER default_mob_handler() {
 *   1. Trying to add a mob that happens to have the same ID as one already in
 *      the handler.
 *   2. I might want to compact the array as I remove mobs for ease of looping
-*   3. Add fucntionality to easily loop through non-default mobs in the array
 */
 /*
 * Initialize handler mob array and mob count value.
 */
 void initialize_handler(MOB_HANDLER* handler, int max_mobs) {
     for(int index = 0; index < ABSOLUTE_MAX_MOBS; index++) {
-        initialize_mob(&handler->mobs[index], DEFAULT, -1);
+        handler->mobs[index] = initialize_mob(DEFAULT, -1, -1, -1);
     }
     handler->local_max_mobs = max_mobs;
     handler->mob_count      = 0;
@@ -34,7 +36,8 @@ void initialize_handler(MOB_HANDLER* handler, int max_mobs) {
 int add_mob(MOB_HANDLER* handler, Mob mob) {
     for(int index = 0; index < handler->local_max_mobs; index++) {
         if(handler->mobs[index].type == DEFAULT) {
-            handler->mobs[index] = mob;
+            printf("added mob to slot: %d\n", index);
+            memcpy(&handler->mobs[index], &mob, sizeof(Mob));
             handler->mob_count++;
             return OK;
         }
@@ -47,13 +50,53 @@ int add_mob(MOB_HANDLER* handler, Mob mob) {
 * leaving "holes" in the array, since I don't think it should matter, if a mob
 * needs to be re-added, it will just fill the next available slot.
 */
-int remove_mob(MOB_HANDLER* handler, Mob mob) {    
+int remove_mob(MOB_HANDLER* handler, Mob* mob) {    
     for(int index = 0; index < handler->local_max_mobs; index++) {
-        if(handler->mobs[index].id == mob.id) {
-            initialize_mob(&handler->mobs[index], DEFAULT, -1);
+        if(handler->mobs[index].id == mob->id) {
+            handler->mobs[index] = initialize_mob(DEFAULT, -1, -1, -1);
             handler->mob_count--;
             return OK;
         }
     }
     return ERROR;
+}
+
+/*
+*  Update all active mobs in the mob array.
+*/
+void update_all_active_mobs(MOB_HANDLER* handler, int max_px, int max_py) {
+    for(int index = 0; index < handler->local_max_mobs; index++) {
+        if(handler->mobs[index].type != DEFAULT) {
+            handler->mobs[index].update(NULL, &handler->mobs[index], max_px, max_py);
+        }
+    }
+}
+
+/*
+*  Draw all active mobs in the mob array.
+*/
+void draw_all_active_mobs(MOB_HANDLER* handler, double delta_time) {
+    for(int index = 0; index < handler->local_max_mobs; index++) {
+        if(handler->mobs[index].type != DEFAULT) {
+            handler->mobs[index].draw(&handler->mobs[index], delta_time);
+        }
+    }
+}
+
+void spawn_mobs(MOB_HANDLER* handler, int max_px, int max_py, int floor_number) {
+    /* 
+    * TODO: Create some sort of smart algorithm based on the floor number, and 
+    * (when eventually implemented) a difficulty scalar using a point system to
+    * create a very "dynamic" variety of mobs on a per-floor basis. For now tho,
+    * Dumb and Quick!
+    */
+    int num_mobs = rng_random_int(1, 2*floor_number);
+    int xpos, ypos;
+    int offset = 32;
+    for(int i = 0; i < num_mobs; i++) {
+        xpos = rng_random_int(offset, (max_px - offset));
+        ypos = rng_random_int(offset, (max_py - offset));
+        Mob temp = initialize_mob(SLIME, i+1, xpos, ypos);
+        add_mob(handler, temp);
+    }
 }

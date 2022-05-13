@@ -44,8 +44,8 @@ typedef struct mob {
 
 Mob default_mob();
 
-int spawn_mob(int spawn_x, int spawn_y, Mob* mob);
+Mob initialize_mob(MOB_TYPE type, int id, int start_x, int start_y);
 
-int initialize_mob(Mob* m, MOB_TYPE type, int id);
+void move_mob(Mob* mob, int new_xpos, int new_ypos);
 
 #endif
