@@ -96,6 +96,7 @@ int main(int argc, char** argv) {
 
     current_room = &f.map[start_row][start_col];
     int status = load_room(current_room);
+    print_floor(&f);
 
     /* Player Setup */
     Mob p;
@@ -111,9 +112,9 @@ int main(int argc, char** argv) {
     /* Testing some Handler Action! */
     MOB_HANDLER mob_manager = default_mob_handler();
     initialize_handler(&mob_manager, 20);
-
     spawn_mobs(&mob_manager, current_room->width, current_room->height, 10);
     printf("Mob Handler mob count: %d\n", mob_manager.mob_count);
+    bool room_changed = false;
     /* Camera Setup */
     float cameraPosition[2] = {0, 0};
     ALLEGRO_TRANSFORM camera;
@@ -141,10 +142,16 @@ int main(int argc, char** argv) {
                 fps = 1.0 / delta_time;
                 old_time = new_time;
 
-                /* Update Player info */
+                /* Spawn new mobs if need be */
+                if(room_changed && current_room->is_spawnable) {
+                    spawn_mobs(&mob_manager, current_room->width, current_room->height, 10);
+                }
+
+                /* Update Player */
                 p.update(key, &p, current_room->width, current_room->height);
+
+                /* Update Mobs on screen */
                 update_all_active_mobs(&mob_manager, current_room->width, current_room->height);
-                //slime.update(NULL, &slime, current_room-> width, current_room->height);
 
                 /* Update camera position and transform everything on the screen */
                 camera_update(cameraPosition, p.position[0], p.position[1], p.width, p.height, current_room->width, current_room->height);
@@ -152,13 +159,9 @@ int main(int argc, char** argv) {
                 al_translate_transform(&camera, -cameraPosition[0], -cameraPosition[1]);
                 al_use_transform(&camera);
 
-                /* Check for door collisions to change rooms */
-                if(is_collision(&p.hb, &current_room->north_door) ||
-                   is_collision(&p.hb, &current_room->south_door) ||
-                   is_collision(&p.hb, &current_room->east_door) ||
-                   is_collision(&p.hb, &current_room->west_door)) {
-                  current_room = change_rooms(f.map, current_room, &p);
-                }
+                /* Update Map and whatnot */
+                current_room = update_dungeon_state(&f, current_room, &p, mob_manager.mob_count, &room_changed);
+
                 /* ESC key to exit game */
                 if(key[ALLEGRO_KEY_ESCAPE]) {
                     done = true;
@@ -167,6 +170,10 @@ int main(int argc, char** argv) {
                 /* T key to show dev tools */
                 if(key[ALLEGRO_KEY_T]) {
                   show_dev_tools = true;
+                }
+                /* K kill all mobs in the room */
+                if(key[ALLEGRO_KEY_K]) {
+                    reset_handler(&mob_manager);
                 }
                 
                 for(int i = 0; i < ALLEGRO_KEY_MAX; i++) {

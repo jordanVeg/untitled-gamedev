@@ -34,7 +34,10 @@ Rogue-lite, but you're a wizard....who can write their own spells!
     - [x] Refine Movement
     - [ ] Dash
     - [ ] Attack Action
-- [ ] Simple Enemy Creation
+- [x] Simple Enemy Creation
+    - [x] Enemy Handler to manage on screen creatures
+    - [ ] Spawning 
+    - [ ] Dying
 - [ ] Simple Combat
 - [ ] Items
 - [ ] GUI

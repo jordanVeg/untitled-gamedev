@@ -36,7 +36,7 @@ typedef struct room {
     ALLEGRO_BITMAP* map;
     ALLEGRO_BITMAP* door;
     ROOM_TYPE type;
-    bool is_initialized, is_loaded, is_spawnable;
+    bool is_initialized, is_loaded, is_spawnable, is_locked;
     /*
     * I want to implement the doors in the following way:
     * door array: {north, south, east, west}, I dont think it makes
@@ -44,7 +44,6 @@ typedef struct room {
     */
     int room_configuration[4];
     Hitbox north_door, south_door, east_door, west_door;
-    //MOB_HANDLER mob_handler;
 } Room;
 
 typedef struct floor {
@@ -52,20 +51,18 @@ typedef struct floor {
   Room map[MAX_ROWS][MAX_COLS];
 } Floor;
 
-Room generate_room(int row_pos, int col_pos, char image_path[IMAGE_PATH_SIZE]);
-
 int load_room(Room* r);
 
 int unload_room(Room* r);
 
 Room* change_rooms(Room map[MAX_ROWS][MAX_COLS], Room* current_room, Mob* p);
 
-void link_rooms(Room map[MAX_ROWS][MAX_COLS]);
-
 void show_room(Room* r);
 
-void print_floor(Floor* f);
-
 void generate_floor(Floor* f, int start_row, int start_col);
+
+Room* update_dungeon_state(Floor* floor, Room* room, Mob* player, int num_active_mobs, bool* room_changed);
+/* Externally visible for debugging purposes*/
+void print_floor(Floor* f);
 
 #endif

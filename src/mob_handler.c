@@ -28,6 +28,18 @@ void initialize_handler(MOB_HANDLER* handler, int max_mobs) {
     handler->local_max_mobs = max_mobs;
     handler->mob_count      = 0;
 }
+/*
+* Reset mob count and clear mob array of a handler.
+*/
+void reset_handler(MOB_HANDLER* handler) {
+    for(int index = 0; index < ABSOLUTE_MAX_MOBS; index++) {
+        if(handler->mobs[index].type != DEFAULT) {
+            /* reset mob */
+            handler->mobs[index] = initialize_mob(DEFAULT, -1, -1, -1);
+        }        
+    }
+    handler->mob_count = 0;
+}
 
 /*
 * add a mob to the handler's array in the next available slot, increment 
@@ -67,8 +79,12 @@ int remove_mob(MOB_HANDLER* handler, Mob* mob) {
 void update_all_active_mobs(MOB_HANDLER* handler, int max_px, int max_py) {
     for(int index = 0; index < handler->local_max_mobs; index++) {
         if(handler->mobs[index].type != DEFAULT) {
+            /* Update Mob State */
             handler->mobs[index].update(NULL, &handler->mobs[index], max_px, max_py);
+            
+            /* Check if mob died and remove them from the Array */
         }
+
     }
 }
 

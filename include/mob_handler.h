@@ -22,6 +22,8 @@ MOB_HANDLER default_mob_handler();
 
 void initialize_handler(MOB_HANDLER* handler, int max_mobs);
 
+void reset_handler(MOB_HANDLER* handler);
+
 int add_mob(MOB_HANDLER* handler, Mob mob);
 
 int remove_mob(MOB_HANDLER* handler, Mob* mob);

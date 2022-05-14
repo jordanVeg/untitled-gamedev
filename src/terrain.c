@@ -17,45 +17,50 @@
 
 Room default_room() {
   Room room = {
-    -1,             /* width */
-    -1,             /* height */
-    -1,             /* row position */
-    -1,             /* column position */
-    {""},           /* id string */
-    {""},           /* background image path string */
-    NULL,           /* ALLEGRO_BITMAP* map */
-    NULL,           /* ALLEGRO_BITMAP* door */
-    EMPTY,          /* room type */
-    false,          /* is_initialized */
-    false,          /* is_loaded */
-    false,          /* is_spawnable */
-    {0, 0, 0, 0},     /* in room_configuration */
-    default_hitbox(),    /* north_door hitbox */
-    default_hitbox(),    /* south_door hitbox */
-    default_hitbox(),     /* east_door hitbox */
-    default_hitbox()//,     /* west_door hitbox */
-    //default_mob_handler() /* MOB_HANDLER */
+    .width              = -1,               /* width */
+    .height             = -1,               /* height */
+    .row_pos            = -1,               /* row position */
+    .col_pos            = -1,               /* column position */
+    .id                 = {""},             /* id string */
+    .path_to_map_image  = {""},             /* background image path string */
+    .map                = NULL,             /* ALLEGRO_BITMAP* map */
+    .door               = NULL,             /* ALLEGRO_BITMAP* door */
+    .type               = EMPTY,            /* room type */
+    .is_initialized     = false,            /* is_initialized */
+    .is_loaded          = false,            /* is_loaded */
+    .is_spawnable       = false,            /* is_spawnable */
+    .is_locked          = false,            /* is_locked */
+    .room_configuration = {0},              /* in room_configuration */
+    .north_door         = default_hitbox(), /* north_door hitbox */
+    .south_door         = default_hitbox(), /* south_door hitbox */
+    .east_door          = default_hitbox(), /* east_door hitbox */
+    .west_door          = default_hitbox()  /* west_door hitbox */
   };
   return room;
 }
 
+/*
+ *******************************************************************************
+ * Internally Visible Functions
+ *******************************************************************************  
+*/
 Room generate_room(int row_pos, int col_pos, char image_path[IMAGE_PATH_SIZE]) {
     Room r = {
-      .width   = 1280, //SCREEN_WIDTH,
-      .height  = 960, //SCREEN_HEIGHT,
-      .row_pos = row_pos,
-      .col_pos = col_pos,
-      .map  = NULL,
-      .door = NULL,
-      .type = BASIC,
+      .width          = 1280, //SCREEN_WIDTH,
+      .height         = 960, //SCREEN_HEIGHT,
+      .row_pos        = row_pos,
+      .col_pos        = col_pos,
+      .map            = NULL,
+      .door           = NULL,
+      .type           = BASIC,
       .is_initialized = true,
-      .is_loaded = false,
-      .is_spawnable = false,
-      .north_door = default_hitbox(),
-      .south_door = default_hitbox(),
-      .east_door = default_hitbox(),
-      .west_door = default_hitbox()//,
-      //.mob_handler = default_mob_handler()
+      .is_loaded      = false,
+      .is_spawnable   = true,
+      .is_locked      = true,
+      .north_door     = default_hitbox(),
+      .south_door     = default_hitbox(),
+      .east_door      = default_hitbox(),
+      .west_door      = default_hitbox()
     };
 
     /* generate id as row-col, always set to be 3 chars on each side of the dash */
@@ -65,75 +70,6 @@ Room generate_room(int row_pos, int col_pos, char image_path[IMAGE_PATH_SIZE]) {
     strncpy(r.path_to_map_image, image_path, IMAGE_PATH_SIZE);
 
     return r;
-}
-
-int load_room(Room* r) {
-  if(r->is_initialized && !r->is_loaded) {
-    r->map = al_load_bitmap(r->path_to_map_image);
-    r->door = al_load_bitmap("../assets/door.png");
-    if(!r->map || !r->door) {
-        printf("couldn't load room map image.\n");
-        return ERROR;
-    }
-    r->is_loaded = true;
-    printf("Loaded Room %s\n", r->id);
-    return OK;
-  } else {
-    printf("Room %s load error: Initialization Status: %d, Load Status: %d\n", r->id, r->is_initialized, r->is_loaded);
-    return ERROR;
-  }
-}
-
-int unload_room(Room* r) {
-  if(r->is_loaded) {
-    al_destroy_bitmap(r->map);
-    al_destroy_bitmap(r->door);
-    r->is_loaded = false;
-    return OK;
-  } else {
-    printf("Room is not loaded, and cannot be unloaded.\n");
-    return ERROR;
-  }
-}
-
-Room* change_rooms(Room map[MAX_ROWS][MAX_COLS], Room* current_room, Mob* p) {
-  /* TODO: implement exception handling via status */
-  int status;
-  int curr_row = current_room->row_pos;
-  int curr_col = current_room->col_pos;
-
-  /* Check for north door collision */
-  if(is_collision(&p->hb, &current_room->north_door) && map[curr_row-1][curr_col].is_initialized) {
-    status = load_room(&map[curr_row-1][curr_col]);
-    status = unload_room(current_room);
-    move_mob(p, p->position[0], map[curr_row-1][curr_col].height - PLAYER_HEIGHT - DOOR_WIDTH - 1);
-    return &map[curr_row-1][curr_col];
-  }
-  /* Check for south door collision */
-  else if(is_collision(&p->hb, &current_room->south_door) && map[curr_row+1][curr_col].is_initialized) {
-    status = load_room(&map[curr_row+1][curr_col]);
-    status = unload_room(current_room);
-    move_mob(p, p->position[0], DOOR_WIDTH + 1);
-    return &map[curr_row+1][curr_col];
-  }
-  /* Check for east door collision */
-  else if(is_collision(&p->hb, &current_room->east_door) && map[curr_row][curr_col+1].is_initialized) {
-    status = load_room(&map[curr_row][curr_col+1]);
-    status = unload_room(current_room);
-    move_mob(p, 1 + DOOR_WIDTH, p->position[1]);
-    return &map[curr_row][curr_col+1];
-  }
-  /* Check for west door collision */
-  else if(is_collision(&p->hb, &current_room->west_door) && map[curr_row][curr_col-1].is_initialized) {
-    status = load_room(&map[curr_row][curr_col-1]);
-    status = unload_room(current_room);
-    move_mob(p, map[curr_row][curr_col-1].width-DOOR_WIDTH-PLAYER_WIDTH-1, p->position[1]);
-    return &map[curr_row][curr_col-1];
-  }
-  else {
-    printf("Nowhere to go\n");
-    return current_room;
-  }
 }
 
 void link_rooms(Room map[MAX_ROWS][MAX_COLS]) {
@@ -177,41 +113,6 @@ void link_rooms(Room map[MAX_ROWS][MAX_COLS]) {
         }
       }
     }
-  }
-}
-
-void show_room(Room* r) {
-  al_draw_bitmap(r->map, 0, 0, 0);
-
-  /* draw doors of the room as well in order: N, S, E, W */
-  if(r->room_configuration[0] == 1) {
-    al_draw_rotated_bitmap(r->door, 0, DOOR_HEIGHT/2, r->width/2, 0, ALLEGRO_PI/2, 0);
-  }
-  if(r->room_configuration[1] == 1) {
-    al_draw_rotated_bitmap(r->door, 0, DOOR_HEIGHT/2, r->width/2, r->height - DOOR_WIDTH, ALLEGRO_PI/2, ALLEGRO_FLIP_HORIZONTAL);
-  }
-  if(r->room_configuration[2] == 1) {
-    al_draw_bitmap(r->door, r->width - DOOR_WIDTH, r->height/2 - DOOR_HEIGHT/2, ALLEGRO_FLIP_HORIZONTAL);
-  }
-  if(r->room_configuration[3] == 1) {
-    al_draw_bitmap(r->door, 0, r->height/2 - DOOR_HEIGHT/2, 0);
-  }
-}
-
-void print_floor(Floor* f) {
-  for(int i = 0; i < MAX_ROWS; ++i){
-    printf("|");
-    for(int j = 0; j < MAX_COLS; ++j) {
-      if(f->map[i][j].is_initialized) {
-        printf(".");
-        //printf(" %s ", f->map[i][j].id);
-      }
-      else {
-        printf("#");
-        //printf(" xxx-xxx ");
-      }
-    }
-    printf("|\n");
   }
 }
 
@@ -330,6 +231,79 @@ Room bsp_step(Room map[MAX_ROWS][MAX_COLS],
   }
 }
 
+/*
+ *******************************************************************************
+ * Externally Visible Functions
+ *******************************************************************************  
+*/
+int load_room(Room* r) {
+  if(r->is_initialized && !r->is_loaded) {
+    r->map = al_load_bitmap(r->path_to_map_image);
+    r->door = al_load_bitmap("../assets/door.png");
+    if(!r->map || !r->door) {
+        printf("couldn't load room map image.\n");
+        return ERROR;
+    }
+    r->is_loaded = true;
+    printf("Loaded Room %s\n", r->id);
+    return OK;
+  } else {
+    printf("Room %s load error: Initialization Status: %d, Load Status: %d\n", r->id, r->is_initialized, r->is_loaded);
+    return ERROR;
+  }
+}
+
+int unload_room(Room* r) {
+  if(r->is_loaded) {
+    al_destroy_bitmap(r->map);
+    al_destroy_bitmap(r->door);
+    r->is_loaded = false;
+    return OK;
+  } else {
+    printf("Room is not loaded, and cannot be unloaded.\n");
+    return ERROR;
+  }
+}
+
+Room* change_rooms(Room map[MAX_ROWS][MAX_COLS], Room* current_room, Mob* p) {
+  /* TODO: implement exception handling via status */
+  int status;
+  int curr_row = current_room->row_pos;
+  int curr_col = current_room->col_pos;
+
+  /* Check for north door collision */
+  if(is_collision(&p->hb, &current_room->north_door) && map[curr_row-1][curr_col].is_initialized) {
+    status = load_room(&map[curr_row-1][curr_col]);
+    status = unload_room(current_room);
+    move_mob(p, p->position[0], map[curr_row-1][curr_col].height - PLAYER_HEIGHT - DOOR_WIDTH - 1);
+    return &map[curr_row-1][curr_col];
+  }
+  /* Check for south door collision */
+  else if(is_collision(&p->hb, &current_room->south_door) && map[curr_row+1][curr_col].is_initialized) {
+    status = load_room(&map[curr_row+1][curr_col]);
+    status = unload_room(current_room);
+    move_mob(p, p->position[0], DOOR_WIDTH + 1);
+    return &map[curr_row+1][curr_col];
+  }
+  /* Check for east door collision */
+  else if(is_collision(&p->hb, &current_room->east_door) && map[curr_row][curr_col+1].is_initialized) {
+    status = load_room(&map[curr_row][curr_col+1]);
+    status = unload_room(current_room);
+    move_mob(p, 1 + DOOR_WIDTH, p->position[1]);
+    return &map[curr_row][curr_col+1];
+  }
+  /* Check for west door collision */
+  else if(is_collision(&p->hb, &current_room->west_door) && map[curr_row][curr_col-1].is_initialized) {
+    status = load_room(&map[curr_row][curr_col-1]);
+    status = unload_room(current_room);
+    move_mob(p, map[curr_row][curr_col-1].width-DOOR_WIDTH-PLAYER_WIDTH-1, p->position[1]);
+    return &map[curr_row][curr_col-1];
+  }
+  else {
+    return current_room;
+  }
+}
+
 void generate_floor(Floor* f, int start_row, int start_col) {
   /* Fill floor map with rooms:
   *  Current Algorithm is using Binary Space Partitioning with the caveat of a starting square.
@@ -347,5 +321,81 @@ void generate_floor(Floor* f, int start_row, int start_col) {
   bsp_step(f->map, start_row, start_col, 0, MAX_ROWS-1, 0, MAX_COLS-1);
   //bsp_step(f->map, start_row, start_col, 5, MAX_ROWS-5, 5, MAX_COLS-5);
   link_rooms(f->map);
-  print_floor(f);
+}
+
+Room* update_dungeon_state(Floor* floor, Room* room, Mob* player, int num_active_mobs, bool* room_changed) {
+  /* 
+  * No mobs on screen, means we can start checking to see if we need to change
+  * rooms.
+  */
+  if(num_active_mobs == 0) {
+    room->is_locked    = false;
+    room->is_spawnable = false;
+    Room* new_room = change_rooms(floor->map, room, player);
+    if(strcmp(new_room->id, room->id) != 0) {
+      room = new_room;
+      *room_changed = true;
+      print_floor(floor);
+    }
+  }
+  else {
+    if(room->is_spawnable) {
+      room->is_locked = true;
+    }
+    *room_changed = false;
+  }
+  /* TODO: This is where I will probably unlock the door to the next floor */
+
+  return room;
+}
+
+void show_room(Room* r) {
+  if(!r->is_loaded) {
+    printf("(terrain.c): Trying to display unloaded room: %s.\n", r->id);
+    exit(1);
+  }
+  al_draw_bitmap(r->map, 0, 0, 0);
+
+  /* draw doors of the room as well in order: N, S, E, W */
+  if(!r->is_locked) {
+    if(r->room_configuration[0] == 1) {
+      al_draw_rotated_bitmap(r->door, 0, DOOR_HEIGHT/2, r->width/2, 0, ALLEGRO_PI/2, 0);
+    }
+    if(r->room_configuration[1] == 1) {
+      al_draw_rotated_bitmap(r->door, 0, DOOR_HEIGHT/2, r->width/2, r->height - DOOR_WIDTH, ALLEGRO_PI/2, ALLEGRO_FLIP_HORIZONTAL);
+    }
+    if(r->room_configuration[2] == 1) {
+      al_draw_bitmap(r->door, r->width - DOOR_WIDTH, r->height/2 - DOOR_HEIGHT/2, ALLEGRO_FLIP_HORIZONTAL);
+    }
+    if(r->room_configuration[3] == 1) {
+      al_draw_bitmap(r->door, 0, r->height/2 - DOOR_HEIGHT/2, 0);
+    }
+  }
+}
+
+void print_floor(Floor* f) {
+  char room_token;
+  for(int i = 0; i < MAX_ROWS; ++i){
+    printf("|");
+    for(int j = 0; j < MAX_COLS; ++j) {
+      if(f->map[i][j].is_loaded) {
+        room_token = 'P';
+      }
+      else if(f->map[i][j].is_initialized) {
+        switch(f->map[i][j].type) {
+          case BASIC:
+            room_token = '.';
+            break;
+          default:
+            room_token = '-';
+            break;
+        }
+      }
+      else {
+        room_token = ' ';
+      }
+      printf("%c", room_token);
+    }
+    printf("|\n");
+  }
 }
