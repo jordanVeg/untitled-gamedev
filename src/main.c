@@ -174,6 +174,7 @@ int main(int argc, char** argv) {
                 /* K kill all mobs in the room */
                 if(key[ALLEGRO_KEY_K]) {
                     reset_handler(&mob_manager);
+                    p.current_health -= 10;
                 }
                 
                 for(int i = 0; i < ALLEGRO_KEY_MAX; i++) {

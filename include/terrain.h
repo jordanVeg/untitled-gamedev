@@ -37,11 +37,6 @@ typedef struct room {
     ALLEGRO_BITMAP* door;
     ROOM_TYPE type;
     bool is_initialized, is_loaded, is_spawnable, is_locked;
-    /*
-    * I want to implement the doors in the following way:
-    * door array: {north, south, east, west}, I dont think it makes
-    * much sense to create door hitboxes that dont actually exist...
-    */
     int room_configuration[4];
     Hitbox north_door, south_door, east_door, west_door;
 } Room;

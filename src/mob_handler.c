@@ -48,7 +48,6 @@ void reset_handler(MOB_HANDLER* handler) {
 int add_mob(MOB_HANDLER* handler, Mob mob) {
     for(int index = 0; index < handler->local_max_mobs; index++) {
         if(handler->mobs[index].type == DEFAULT) {
-            printf("added mob to slot: %d\n", index);
             memcpy(&handler->mobs[index], &mob, sizeof(Mob));
             handler->mob_count++;
             return OK;
@@ -83,6 +82,9 @@ void update_all_active_mobs(MOB_HANDLER* handler, int max_px, int max_py) {
             handler->mobs[index].update(NULL, &handler->mobs[index], max_px, max_py);
             
             /* Check if mob died and remove them from the Array */
+            if(handler->mobs[index].current_state == DEAD) {
+                remove_mob(handler, &handler->mobs[index]);
+            }
         }
 
     }

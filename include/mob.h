@@ -31,6 +31,7 @@ typedef struct mob {
     int vel_y;
     int speed;
     int dir;
+    float max_health, current_health;
     MOB_TYPE type;
     Hitbox hb;
     STATE current_state;
