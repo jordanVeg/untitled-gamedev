@@ -158,6 +158,13 @@ int main(int argc, char** argv) {
                 /* Update Projectile */
                 update_projectile(&bullet);
 
+                for(int i = 0; i < mob_manager.local_max_mobs; i++) {
+                    if(is_collision(&bullet.hb, &mob_manager.mobs[i].hb)) {
+                        mob_manager.mobs[i].current_health -= bullet.damage;
+                        bullet.live = false;
+                        break;
+                    }
+                }
                 /* Update Mobs on screen */
                 update_all_active_mobs(&mob_manager, current_room->width, current_room->height);
 
@@ -188,7 +195,7 @@ int main(int argc, char** argv) {
                 break;
             case ALLEGRO_EVENT_MOUSE_BUTTON_DOWN:
                 if(event.mouse.button == 1) {
-                    fire_projectile(&bullet, p.position[0] + p.width/2, p.position[1] + p.height/2, mouseX, mouseY, 10);
+                    fire_projectile(&bullet, p.position[0] + p.width/2, p.position[1] + p.height/2, mouseX, mouseY, 50);
                 }
                 break;
             case ALLEGRO_EVENT_MOUSE_AXES:
@@ -202,6 +209,9 @@ int main(int argc, char** argv) {
                 if(key[ALLEGRO_KEY_K]) {
                     reset_handler(&mob_manager);
                     p.current_health -= 10;
+                }
+                if(key[ALLEGRO_KEY_H]) {
+                    toggle_hitboxes();
                 }
                  break;
             case ALLEGRO_EVENT_KEY_UP:

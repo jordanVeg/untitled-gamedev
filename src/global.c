@@ -2,6 +2,8 @@
 
 #include "global.h"
 
+bool show_hitboxes = false;
+
 int constrain(int min, int max, int val) {
     if(val <= min) {
         return min;
@@ -20,4 +22,8 @@ float constrain_f(float min, float max, float val) {
     } else {
         return val;
     }
+}
+
+void toggle_hitboxes() {
+    show_hitboxes = !show_hitboxes;
 }

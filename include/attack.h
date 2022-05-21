@@ -4,7 +4,7 @@
 #include "collisions.h"
 
 typedef struct projectile {
-    int x, y, r;
+    int x, y, r, id, damage;
     double xspeed, yspeed;
     bool live;
     Hitbox hb;

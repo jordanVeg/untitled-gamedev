@@ -84,6 +84,7 @@ void update_slime(unsigned char key[], Mob* slime, int max_px, int max_py) {
         
         slime->position[0] = constrain(0, max_px - slime->width, (slime->position[0] + slime->vel_x));
     }
+    update_hitbox_position(&slime->hb, slime->position[0], slime->position[1]);
 }
 
 void draw_mob(Mob* m, double delta_time) {
@@ -119,11 +120,14 @@ void draw_mob(Mob* m, double delta_time) {
     *  TODO: make this a "health bar" function or something, maybe I can
     *  generalize it to represent other values as well? 
     */
-    al_draw_rectangle(m->position[0], m->position[1] - 10, m->position[0] + 50, m->position[1] - 5, al_map_rgb(0, 100, 0), 5);
     if(m->current_health != m->max_health) {
-        al_draw_rectangle(m->position[0], m->position[1] - 10, m->position[0] + (50 - 50 * constrain_f(0, 1, m->current_health/m->max_health)), m->position[1] - 5, al_map_rgb(100, 0, 0), 5);
+        al_draw_rectangle(m->position[0], m->position[1] - 10, m->position[0] + m->width, m->position[1] - 5, al_map_rgb(0, 100, 0), 5);
+        al_draw_rectangle(m->position[0], m->position[1] - 10, m->position[0] + (m->width - (m->width * constrain_f(0, 1, m->current_health/m->max_health))), m->position[1] - 5, al_map_rgb(100, 0, 0), 5);
     }
     m->last_animation_frame = sourceX;
+    if(show_hitboxes) {
+        draw_hitbox(&m->hb, al_map_rgb(255, 0, 0));
+    }
 }
 
 void draw_static_mob(Mob* m, double delta_time) {

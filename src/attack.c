@@ -8,6 +8,7 @@
 #include <allegro5/allegro_primitives.h>    /* Allegro Primatives library */
 
 #include "attack.h"
+#include "global.h"
 
 
 PROJECTILE initialize_projectile() {
@@ -15,6 +16,8 @@ PROJECTILE initialize_projectile() {
         .x = 0,
         .y = 0,
         .r = 0,
+        .id = 0,
+        .damage = 0,
         .xspeed = 0,
         .yspeed = 0,
         .live = false,
@@ -32,7 +35,8 @@ void fire_projectile(PROJECTILE* bullet, int startx, int starty, int endx, int e
     bullet->x = startx;
     bullet->y = starty;
     bullet->r = 5;
-    create_hitbox(&bullet->hb, bullet->x, bullet->y, bullet->r, bullet->r);
+    bullet->damage = 10;
+    create_hitbox(&bullet->hb, bullet->x, bullet->y, bullet->r * 2, bullet->r * 2);
     bullet->xspeed = speed * cos(theta);
     bullet->yspeed = speed * sin(theta);
     bullet->live = true; 
@@ -46,6 +50,8 @@ void update_projectile(PROJECTILE* bullet) {
         bullet->x += bullet->xspeed;
         bullet->y += bullet->yspeed;
         update_hitbox_position(&bullet->hb, bullet->x, bullet->y);
+    } else {
+        *bullet = initialize_projectile();
     }
 }
 
@@ -54,6 +60,9 @@ void update_projectile(PROJECTILE* bullet) {
 */
 void draw_projectile(PROJECTILE* bullet) {
     if(bullet->live) {
-        al_draw_filled_circle(bullet->x, bullet->y, bullet->r, al_map_rgb(255, 255, 255));
+        al_draw_filled_circle(bullet->x + bullet-> r, bullet->y + bullet->r, bullet->r, al_map_rgb(255, 255, 255));
+        if(show_hitboxes) {
+            draw_hitbox(&bullet->hb, al_map_rgb(0, 0, 255));
+        }
     }
 }

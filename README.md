@@ -36,9 +36,11 @@ Rogue-lite, but you're a wizard....who can write their own spells!
     - [ ] Attack Action
 - [x] Simple Enemy Creation
     - [x] Enemy Handler to manage on screen creatures
-    - [ ] Spawning 
-    - [ ] Dying
+    - [x] Spawning 
+    - [x] Dying
 - [ ] Simple Combat
+    - [x] Projectile Creation
+    - [x] Collisions
 - [ ] Items
 - [ ] GUI
 - [ ] Animation
