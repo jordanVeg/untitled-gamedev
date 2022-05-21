@@ -17,6 +17,7 @@
 #include "terrain.h"
 #include "random.h"
 #include "mob_handler.h"
+#include "attack.h"
 
 #define KEY_SEEN     1
 #define KEY_RELEASED 2
@@ -115,6 +116,10 @@ int main(int argc, char** argv) {
     spawn_mobs(&mob_manager, current_room->width, current_room->height, 10);
     printf("Mob Handler mob count: %d\n", mob_manager.mob_count);
     bool room_changed = false;
+
+    /* Projectile Testing */
+    PROJECTILE bullet = initialize_projectile();
+
     /* Camera Setup */
     float cameraPosition[2] = {0, 0};
     ALLEGRO_TRANSFORM camera;
@@ -150,6 +155,9 @@ int main(int argc, char** argv) {
                 /* Update Player */
                 p.update(key, &p, current_room->width, current_room->height);
 
+                /* Update Projectile */
+                update_projectile(&bullet);
+
                 /* Update Mobs on screen */
                 update_all_active_mobs(&mob_manager, current_room->width, current_room->height);
 
@@ -171,11 +179,6 @@ int main(int argc, char** argv) {
                 if(key[ALLEGRO_KEY_T]) {
                   show_dev_tools = true;
                 }
-                /* K kill all mobs in the room */
-                if(key[ALLEGRO_KEY_K]) {
-                    reset_handler(&mob_manager);
-                    p.current_health -= 10;
-                }
                 
                 for(int i = 0; i < ALLEGRO_KEY_MAX; i++) {
                     key[i] &= KEY_SEEN;
@@ -183,12 +186,23 @@ int main(int argc, char** argv) {
 
                 redraw = true;
                 break;
+            case ALLEGRO_EVENT_MOUSE_BUTTON_DOWN:
+                if(event.mouse.button == 1) {
+                    fire_projectile(&bullet, p.position[0] + p.width/2, p.position[1] + p.height/2, mouseX, mouseY, 10);
+                }
+                break;
             case ALLEGRO_EVENT_MOUSE_AXES:
                 mouseX = event.mouse.x;
                 mouseY = event.mouse.y;
                 break;
             case ALLEGRO_EVENT_KEY_DOWN:
                  key[event.keyboard.keycode] = KEY_SEEN | KEY_RELEASED;
+                
+                /* K kill all mobs in the room */
+                if(key[ALLEGRO_KEY_K]) {
+                    reset_handler(&mob_manager);
+                    p.current_health -= 10;
+                }
                  break;
             case ALLEGRO_EVENT_KEY_UP:
                 key[event.keyboard.keycode] &= KEY_RELEASED;
@@ -206,6 +220,7 @@ int main(int argc, char** argv) {
             show_room(current_room);
             p.draw(&p, delta_time);
             draw_all_active_mobs(&mob_manager, delta_time);
+            draw_projectile(&bullet);
             if(show_dev_tools) {
               al_draw_textf(font, al_map_rgb(0, 0, 0), 0, dev_tool_pos * 0, 0, "Player position. x: %d, y: %d", p.position[0], p.position[1]);
               al_draw_textf(font, al_map_rgb(0, 0, 0), 0, dev_tool_pos * 1, 0, "Current Room: %s", current_room->id);
