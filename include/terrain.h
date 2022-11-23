@@ -20,13 +20,14 @@
 
 extern int floor_num;
 
-typedef enum {
-  BASIC,
-  KEY,
-  EXIT,
-  SHOP,
-  EMPTY,
-  CHALLENGE
+typedef enum room_type {
+  R_BASIC,     //Normal enemy spawn
+  R_CHALLENGE, //Challenge Item room
+  R_DEFAULT,   //Default, no real room should have this type
+  R_EXIT,      //Doorway to next floor
+  R_KEY,       //Difficult Enemies, Key Room
+  R_SHOP,      //Shop
+  R_START,     //Starter Room, No Enemy Spawn
 } ROOM_TYPE;
 
 typedef struct room {
@@ -43,6 +44,10 @@ typedef struct room {
 
 typedef struct floor {
   int number;
+  int start_row;
+  int stop_row;
+  int start_col;
+  int stop_col;
   Room map[MAX_ROWS][MAX_COLS];
 } Floor;
 
@@ -54,7 +59,7 @@ Room* change_rooms(Room map[MAX_ROWS][MAX_COLS], Room* current_room, Mob* p);
 
 void show_room(Room* r);
 
-void generate_floor(Floor* f, int start_row, int start_col);
+void generate_floor(Floor* f, int floor_num, int init_row, int init_col);
 
 Room* update_dungeon_state(Floor* floor, Room* room, Mob* player, int num_active_mobs, bool* room_changed);
 /* Externally visible for debugging purposes*/

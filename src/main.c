@@ -30,7 +30,7 @@ int dev_tool_pos    = 16;
 void camera_update(float* cameraPosition, float x, float y, float width, float height, float x_max, float y_max) {
     cameraPosition[0] = -(SCREEN_WIDTH / 2) + (x + width/2);
     cameraPosition[1] = -(SCREEN_HEIGHT / 2) + (y + height/2);
-    
+
     cameraPosition[0] = constrain_f(0, abs(x_max - SCREEN_WIDTH), cameraPosition[0]);
     cameraPosition[1] = constrain_f(0, abs(y_max - SCREEN_HEIGHT), cameraPosition[1]);
 }
@@ -87,13 +87,13 @@ int main(int argc, char** argv) {
 
     /* Initialize random number generator */
     rng_initialize();
-    
+
     /* Floor & room setup */
     Room* current_room;
     Floor f;
     int start_row = MAX_ROWS/2;
     int start_col = MAX_COLS/2;
-    generate_floor(&f, start_row, start_col);
+    generate_floor(&f, 1, start_row, start_col);
 
     current_room = &f.map[start_row][start_col];
     int status = load_room(current_room);
@@ -113,8 +113,8 @@ int main(int argc, char** argv) {
     /* Testing some Handler Action! */
     MOB_HANDLER mob_manager = default_mob_handler();
     initialize_handler(&mob_manager, 20);
-    spawn_mobs(&mob_manager, current_room->width, current_room->height, 10);
-    printf("Mob Handler mob count: %d\n", mob_manager.mob_count);
+    //spawn_mobs(&mob_manager, current_room->width, current_room->height, 10);
+    //printf("Mob Handler mob count: %d\n", mob_manager.mob_count);
     bool room_changed = false;
 
     /* Projectile Testing */
@@ -148,10 +148,11 @@ int main(int argc, char** argv) {
                 old_time = new_time;
 
                 /* Spawn new mobs if need be */
+                /*
                 if(room_changed && current_room->is_spawnable) {
                     spawn_mobs(&mob_manager, current_room->width, current_room->height, 10);
                 }
-
+                */
                 /* Update Player */
                 p.update(key, &p, current_room->width, current_room->height);
 
@@ -186,7 +187,7 @@ int main(int argc, char** argv) {
                 if(key[ALLEGRO_KEY_T]) {
                   show_dev_tools = true;
                 }
-                
+
                 for(int i = 0; i < ALLEGRO_KEY_MAX; i++) {
                     key[i] &= KEY_SEEN;
                 }
@@ -204,7 +205,7 @@ int main(int argc, char** argv) {
                 break;
             case ALLEGRO_EVENT_KEY_DOWN:
                  key[event.keyboard.keycode] = KEY_SEEN | KEY_RELEASED;
-                
+
                 /* K kill all mobs in the room */
                 if(key[ALLEGRO_KEY_K]) {
                     reset_handler(&mob_manager);

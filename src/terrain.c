@@ -25,7 +25,7 @@ Room default_room() {
     .path_to_map_image  = {""},             /* background image path string */
     .map                = NULL,             /* ALLEGRO_BITMAP* map */
     .door               = NULL,             /* ALLEGRO_BITMAP* door */
-    .type               = EMPTY,            /* room type */
+    .type               = R_DEFAULT,        /* room type */
     .is_initialized     = false,            /* is_initialized */
     .is_loaded          = false,            /* is_loaded */
     .is_spawnable       = false,            /* is_spawnable */
@@ -42,7 +42,7 @@ Room default_room() {
 /*
  *******************************************************************************
  * Internally Visible Functions
- *******************************************************************************  
+ *******************************************************************************
 */
 Room generate_room(int row_pos, int col_pos, char image_path[IMAGE_PATH_SIZE]) {
     Room r = {
@@ -52,7 +52,7 @@ Room generate_room(int row_pos, int col_pos, char image_path[IMAGE_PATH_SIZE]) {
       .col_pos        = col_pos,
       .map            = NULL,
       .door           = NULL,
-      .type           = BASIC,
+      .type           = R_BASIC,
       .is_initialized = true,
       .is_loaded      = false,
       .is_spawnable   = true,
@@ -175,11 +175,13 @@ Room bsp_step(Room map[MAX_ROWS][MAX_COLS],
   /* Recursive exit condition: if subgraph is <= minimum size, generate a room and exit */
   if((end_row-start_row <= MIN_SUBGRAPH_SIZE) || (end_col-start_col <= MIN_SUBGRAPH_SIZE)) {
     int row_pos, col_pos;
+    bool is_start_room = false;
     /* Check if starting position is in subgraph. If so, use that as the generated room */
     if((init_row_pos >= start_row && init_row_pos <= end_row) &&
        (init_col_pos >= start_col && init_col_pos <= end_col)) {
       row_pos = init_row_pos;
       col_pos = init_col_pos;
+      is_start_room = true;
     }
     else {
       /* Otherwise, generate random position within row/col range */
@@ -194,6 +196,8 @@ Room bsp_step(Room map[MAX_ROWS][MAX_COLS],
       r = generate_room(row_pos, col_pos, room_path);
       map[row_pos][col_pos] = r;
     }
+
+    if(is_start_room) map[row_pos][col_pos].type = R_START;
 
     /* Return selected room position, whether it be generated or selected */
     return map[row_pos][col_pos];
@@ -226,15 +230,59 @@ Room bsp_step(Room map[MAX_ROWS][MAX_COLS],
     generate_path_between_rooms(map, r1.row_pos, r1.col_pos, r2.row_pos, r2.col_pos);
 
     /* Randomly select one of the 2 connected rooms, and choose that as the output */
-    output = rng_percent_chance(0.5)? r1: r2;
+    output = rng_percent_chance(0.5)? r1 : r2;
     return output;
   }
 }
 
 /*
+* Distribute the different types of possible floor attributes across the
+* initialized rooms.
+*/
+void distr_attributes(Floor* f, int amount, ROOM_TYPE type) {
+  int pos = 0;
+  typedef struct coord{
+    int row;
+    int col;
+  } Coord;
+  Coord available_room[MAX_ROWS * MAX_COLS];
+  int available_row[MAX_ROWS * MAX_COLS] = {0};
+  int available_col[MAX_COLS * MAX_COLS] = {0};
+  int total = 0;
+
+  //Populate list of available (rows/cols)
+  for(int i = 0; i < MAX_ROWS; i++) {
+    for(int j = 0; j < MAX_COLS; j++) {
+        if(f->map[i][j].type == R_BASIC) {
+          //available_room[total].row = i;
+          //available_room[total].col = j;
+          available_row[total] = i;
+          available_col[total] = j;
+          total++;
+        }
+    }
+  }
+  /* Loop until all the rooms have been distributed */
+  for(int iter = 0; iter < amount; iter++) {
+    //select which room to distribute
+
+    pos = rng_random_int(0, total-1);
+    f->map[available_row[pos]][available_col[pos]].type = type;
+
+    for(int i = 0; i < total-2; i++) {
+      if(i >= pos) {
+        available_row[i] = available_row[i+1];
+        available_col[i] = available_col[i+1];
+      }
+    }
+    total-=1;
+  }
+  //Seem to be throwing some kind of error trying to return out of this loop...
+}
+/*
  *******************************************************************************
  * Externally Visible Functions
- *******************************************************************************  
+ *******************************************************************************
 */
 int load_room(Room* r) {
   if(r->is_initialized && !r->is_loaded) {
@@ -304,7 +352,7 @@ Room* change_rooms(Room map[MAX_ROWS][MAX_COLS], Room* current_room, Mob* p) {
   }
 }
 
-void generate_floor(Floor* f, int start_row, int start_col) {
+void generate_floor(Floor* f, int floor_num, int init_row, int init_col) {
   /* Fill floor map with rooms:
   *  Current Algorithm is using Binary Space Partitioning with the caveat of a starting square.
   */
@@ -313,18 +361,38 @@ void generate_floor(Floor* f, int start_row, int start_col) {
         f->map[i][j] = default_room();
     }
   }
+
+  /* set floor number and floor "size" */
+  f->number = floor_num;
+  f->start_row = 0;
+  f->start_col = 0;
+  f->stop_row = MAX_ROWS-1;
+  f->stop_col = MAX_COLS-1;
   /*
   * TODO: For future implementations, I would like to scale how large the floor
-  * can be. To do this I will need some way of altering inputs 5 and 7 to the 
+  * can be. To do this I will need some way of altering inputs 5 and 7 to the
   * bsp step algorithm, which should increased based on floor number.
   */
-  bsp_step(f->map, start_row, start_col, 0, MAX_ROWS-1, 0, MAX_COLS-1);
+  bsp_step(f->map, init_row, init_col, f->start_row, f->stop_row, f->start_col, f->stop_col);
   //bsp_step(f->map, start_row, start_col, 5, MAX_ROWS-5, 5, MAX_COLS-5);
   link_rooms(f->map);
+
+  /* Once the floor layout is generated, Need to populate it with...stuff */
+  /* ALWAYS generate 1 key and 1 exit per floor */
+  distr_attributes(f, 1, R_KEY);
+  distr_attributes(f, 1, R_EXIT);
+  /*
+   * TODO: figure out a better method of calculating how many shops/challenge
+   * rooms to generate, here are some thoughts:
+   *  1. purely based off floor number rand(1, floor_num)
+   *  2. Based off the total number of available rooms on the floor
+   */
+  distr_attributes(f, rng_random_int(1, f->number+1), R_SHOP);
+  distr_attributes(f, rng_random_int(0, f->number), R_CHALLENGE);
 }
 
 Room* update_dungeon_state(Floor* floor, Room* room, Mob* player, int num_active_mobs, bool* room_changed) {
-  /* 
+  /*
   * No mobs on screen, means we can start checking to see if we need to change
   * rooms.
   */
@@ -376,15 +444,33 @@ void show_room(Room* r) {
 void print_floor(Floor* f) {
   char room_token;
   for(int i = 0; i < MAX_ROWS; ++i){
-    printf("|");
+    printf("%02d. |", i);
     for(int j = 0; j < MAX_COLS; ++j) {
       if(f->map[i][j].is_loaded) {
         room_token = 'P';
       }
       else if(f->map[i][j].is_initialized) {
         switch(f->map[i][j].type) {
-          case BASIC:
+          case R_BASIC:
             room_token = '.';
+            break;
+          case R_CHALLENGE:
+            room_token = 'C';
+            break;
+          case R_DEFAULT:
+            room_token = '?';
+            break;
+          case R_EXIT:
+            room_token = 'E';
+            break;
+          case R_KEY:
+            room_token = 'K';
+            break;
+          case R_SHOP:
+            room_token = 'S';
+            break;
+          case R_START:
+            room_token = 'O';
             break;
           default:
             room_token = '-';
