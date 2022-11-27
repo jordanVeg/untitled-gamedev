@@ -111,8 +111,8 @@ int main(int argc, char** argv) {
     }
 
     /* Testing some Handler Action! */
-    MOB_HANDLER mob_manager = default_mob_handler();
-    initialize_handler(&mob_manager, 20);
+    //MOB_HANDLER mob_manager = default_mob_handler();
+    //initialize_handler(&mob_manager, 20);
     //spawn_mobs(&mob_manager, current_room->width, current_room->height, 10);
     //printf("Mob Handler mob count: %d\n", mob_manager.mob_count);
     bool room_changed = false;
@@ -159,15 +159,13 @@ int main(int argc, char** argv) {
                 /* Update Projectile */
                 update_projectile(&bullet);
 
-                for(int i = 0; i < mob_manager.local_max_mobs; i++) {
-                    if(is_collision(&bullet.hb, &mob_manager.mobs[i].hb)) {
-                        mob_manager.mobs[i].current_health -= bullet.damage;
+                for(int i = 0; i < current_room->m_handler.local_max_mobs; i++) {
+                    if(is_collision(&bullet.hb, &current_room->m_handler.mobs[i].hb)) {
+                        current_room->m_handler.mobs[i].current_health -= bullet.damage;
                         bullet.live = false;
                         break;
                     }
                 }
-                /* Update Mobs on screen */
-                update_all_active_mobs(&mob_manager, current_room->width, current_room->height);
 
                 /* Update camera position and transform everything on the screen */
                 camera_update(cameraPosition, p.position[0], p.position[1], p.width, p.height, current_room->width, current_room->height);
@@ -176,7 +174,7 @@ int main(int argc, char** argv) {
                 al_use_transform(&camera);
 
                 /* Update Map and whatnot */
-                current_room = update_dungeon_state(&f, current_room, &p, mob_manager.mob_count, &room_changed);
+                current_room = update_dungeon_state(&f, current_room, &p, &room_changed);
 
                 /* ESC key to exit game */
                 if(key[ALLEGRO_KEY_ESCAPE]) {
@@ -208,8 +206,8 @@ int main(int argc, char** argv) {
 
                 /* K kill all mobs in the room */
                 if(key[ALLEGRO_KEY_K]) {
-                    reset_handler(&mob_manager);
-                    p.current_health -= 10;
+                    reset_handler(&current_room->m_handler);
+                    //p.current_health -= 10;
                 }
                 if(key[ALLEGRO_KEY_H]) {
                     toggle_hitboxes();
@@ -228,9 +226,8 @@ int main(int argc, char** argv) {
 
         if(redraw && al_is_event_queue_empty(queue)) {
             al_clear_to_color(al_map_rgb(0, 0, 0));
-            show_room(current_room);
+            draw_room(current_room, delta_time);
             p.draw(&p, delta_time);
-            draw_all_active_mobs(&mob_manager, delta_time);
             draw_projectile(&bullet);
             if(show_dev_tools) {
               al_draw_textf(font, al_map_rgb(0, 0, 0), 0, dev_tool_pos * 0, 0, "Player position. x: %d, y: %d", p.position[0], p.position[1]);

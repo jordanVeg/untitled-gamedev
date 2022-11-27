@@ -16,22 +16,23 @@ typedef struct mob_handler {
     Mob mobs[ABSOLUTE_MAX_MOBS];
     int local_max_mobs;
     int mob_count;
-} MOB_HANDLER;
+    bool is_initialized;
+} Mob_Handler;
 
-MOB_HANDLER default_mob_handler();
+Mob_Handler default_mob_handler();
 
-void initialize_handler(MOB_HANDLER* handler, int max_mobs);
+void initialize_handler(Mob_Handler* handler, int max_mobs);
 
-void reset_handler(MOB_HANDLER* handler);
+void reset_handler(Mob_Handler* handler);
 
-int add_mob(MOB_HANDLER* handler, Mob mob);
+int add_mob(Mob_Handler* handler, Mob mob);
 
-int remove_mob(MOB_HANDLER* handler, Mob* mob);
+int remove_mob(Mob_Handler* handler, Mob* mob);
 
-void update_all_active_mobs(MOB_HANDLER* handler, int max_px, int max_py);
+void update_all_active_mobs(Mob_Handler* handler, int max_px, int max_py);
 
-void draw_all_active_mobs(MOB_HANDLER* handler, double delta_time);
+void draw_all_active_mobs(Mob_Handler* handler, double delta_time);
 
-void spawn_mobs(MOB_HANDLER* handler, int max_px, int max_py, int floor_number);
+void spawn_mobs(Mob_Handler* handler, int max_px, int max_py, int floor_number);
 
 #endif

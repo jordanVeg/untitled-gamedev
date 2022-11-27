@@ -26,7 +26,7 @@ typedef enum room_type {
   R_DEFAULT,   //Default, no real room should have this type
   R_EXIT,      //Doorway to next floor
   R_KEY,       //Difficult Enemies, Key Room
-  R_SHOP,      //Shop
+  R_SHOP,      //Shop, No Enemy Spawn
   R_START,     //Starter Room, No Enemy Spawn
 } ROOM_TYPE;
 
@@ -40,6 +40,7 @@ typedef struct room {
     bool is_initialized, is_loaded, is_spawnable, is_locked;
     int room_configuration[4];
     Hitbox north_door, south_door, east_door, west_door;
+    Mob_Handler m_handler;
 } Room;
 
 typedef struct floor {
@@ -57,11 +58,11 @@ int unload_room(Room* r);
 
 Room* change_rooms(Room map[MAX_ROWS][MAX_COLS], Room* current_room, Mob* p);
 
-void show_room(Room* r);
+void draw_room(Room* r, double delta_time);
 
 void generate_floor(Floor* f, int floor_num, int init_row, int init_col);
 
-Room* update_dungeon_state(Floor* floor, Room* room, Mob* player, int num_active_mobs, bool* room_changed);
+Room* update_dungeon_state(Floor* floor, Room* room, Mob* player, bool* room_changed);
 /* Externally visible for debugging purposes*/
 void print_floor(Floor* f);
 

@@ -3,16 +3,17 @@
 #include "mob_handler.h"
 #include "random.h"
 
-MOB_HANDLER default_mob_handler() {
-    MOB_HANDLER mob_handler = {
-        .mobs = {default_mob()},
-        .local_max_mobs = -1,
-        .mob_count = -1
+Mob_Handler default_mob_handler() {
+    Mob_Handler mob_handler = {
+        .mobs           = {default_mob()},
+        .local_max_mobs = 0,
+        .mob_count      = 0,
+        .is_initialized = false
     };
     return mob_handler;
 }
 /*
-* TODO: Generally, I might want to add in functionality to take care of the 
+* TODO: Generally, I might want to add in functionality to take care of the
 * following cases/tweak some things:
 *   1. Trying to add a mob that happens to have the same ID as one already in
 *      the handler.
@@ -21,31 +22,32 @@ MOB_HANDLER default_mob_handler() {
 /*
 * Initialize handler mob array and mob count value.
 */
-void initialize_handler(MOB_HANDLER* handler, int max_mobs) {
+void initialize_handler(Mob_Handler* handler, int max_mobs) {
     for(int index = 0; index < ABSOLUTE_MAX_MOBS; index++) {
         handler->mobs[index] = initialize_mob(DEFAULT, -1, -1, -1);
     }
     handler->local_max_mobs = max_mobs;
     handler->mob_count      = 0;
+    handler->is_initialized = true;
 }
 /*
 * Reset mob count and clear mob array of a handler.
 */
-void reset_handler(MOB_HANDLER* handler) {
+void reset_handler(Mob_Handler* handler) {
     for(int index = 0; index < ABSOLUTE_MAX_MOBS; index++) {
         if(handler->mobs[index].type != DEFAULT) {
             /* reset mob */
             handler->mobs[index] = initialize_mob(DEFAULT, -1, -1, -1);
-        }        
+        }
     }
     handler->mob_count = 0;
 }
 
 /*
-* add a mob to the handler's array in the next available slot, increment 
+* add a mob to the handler's array in the next available slot, increment
 * mob_count. Return OK if it was added successfully, ERROR otherwise
 */
-int add_mob(MOB_HANDLER* handler, Mob mob) {
+int add_mob(Mob_Handler* handler, Mob mob) {
     for(int index = 0; index < handler->local_max_mobs; index++) {
         if(handler->mobs[index].type == DEFAULT) {
             memcpy(&handler->mobs[index], &mob, sizeof(Mob));
@@ -61,7 +63,7 @@ int add_mob(MOB_HANDLER* handler, Mob mob) {
 * leaving "holes" in the array, since I don't think it should matter, if a mob
 * needs to be re-added, it will just fill the next available slot.
 */
-int remove_mob(MOB_HANDLER* handler, Mob* mob) {    
+int remove_mob(Mob_Handler* handler, Mob* mob) {
     for(int index = 0; index < handler->local_max_mobs; index++) {
         if(handler->mobs[index].id == mob->id) {
             handler->mobs[index] = initialize_mob(DEFAULT, -1, -1, -1);
@@ -75,12 +77,12 @@ int remove_mob(MOB_HANDLER* handler, Mob* mob) {
 /*
 *  Update all active mobs in the mob array.
 */
-void update_all_active_mobs(MOB_HANDLER* handler, int max_px, int max_py) {
+void update_all_active_mobs(Mob_Handler* handler, int max_px, int max_py) {
     for(int index = 0; index < handler->local_max_mobs; index++) {
         if(handler->mobs[index].type != DEFAULT) {
             /* Update Mob State */
             handler->mobs[index].update(NULL, &handler->mobs[index], max_px, max_py);
-            
+
             /* Check if mob died and remove them from the Array */
             if(handler->mobs[index].current_state == DEAD) {
                 remove_mob(handler, &handler->mobs[index]);
@@ -93,7 +95,7 @@ void update_all_active_mobs(MOB_HANDLER* handler, int max_px, int max_py) {
 /*
 *  Draw all active mobs in the mob array.
 */
-void draw_all_active_mobs(MOB_HANDLER* handler, double delta_time) {
+void draw_all_active_mobs(Mob_Handler* handler, double delta_time) {
     for(int index = 0; index < handler->local_max_mobs; index++) {
         if(handler->mobs[index].type != DEFAULT) {
             handler->mobs[index].draw(&handler->mobs[index], delta_time);
@@ -101,9 +103,9 @@ void draw_all_active_mobs(MOB_HANDLER* handler, double delta_time) {
     }
 }
 
-void spawn_mobs(MOB_HANDLER* handler, int max_px, int max_py, int floor_number) {
-    /* 
-    * TODO: Create some sort of smart algorithm based on the floor number, and 
+void spawn_mobs(Mob_Handler* handler, int max_px, int max_py, int floor_number) {
+    /*
+    * TODO: Create some sort of smart algorithm based on the floor number, and
     * (when eventually implemented) a difficulty scalar using a point system to
     * create a very "dynamic" variety of mobs on a per-floor basis. For now tho,
     * Dumb and Quick!

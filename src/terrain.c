@@ -12,30 +12,30 @@
 
 #include "terrain.h"
 #include "random.h"
-#include "mob_handler.h"
 
 #define MIN_SUBGRAPH_SIZE 2
 
 Room default_room() {
   Room room = {
-    .width              = -1,               /* width */
-    .height             = -1,               /* height */
-    .row_pos            = -1,               /* row position */
-    .col_pos            = -1,               /* column position */
-    .id                 = {""},             /* id string */
-    .path_to_map_image  = {""},             /* background image path string */
-    .map                = NULL,             /* ALLEGRO_BITMAP* map */
-    .door               = NULL,             /* ALLEGRO_BITMAP* door */
-    .type               = R_DEFAULT,        /* room type */
-    .is_initialized     = false,            /* is_initialized */
-    .is_loaded          = false,            /* is_loaded */
-    .is_spawnable       = false,            /* is_spawnable */
-    .is_locked          = false,            /* is_locked */
-    .room_configuration = {0},              /* in room_configuration */
-    .north_door         = default_hitbox(), /* north_door hitbox */
-    .south_door         = default_hitbox(), /* south_door hitbox */
-    .east_door          = default_hitbox(), /* east_door hitbox */
-    .west_door          = default_hitbox()  /* west_door hitbox */
+    .width              = -1,                   /* width */
+    .height             = -1,                   /* height */
+    .row_pos            = -1,                   /* row position */
+    .col_pos            = -1,                   /* column position */
+    .id                 = {""},                 /* id string */
+    .path_to_map_image  = {""},                 /* background image path string */
+    .map                = NULL,                 /* ALLEGRO_BITMAP* map */
+    .door               = NULL,                 /* ALLEGRO_BITMAP* door */
+    .type               = R_DEFAULT,            /* room type */
+    .is_initialized     = false,                /* is_initialized */
+    .is_loaded          = false,                /* is_loaded */
+    .is_spawnable       = false,                /* is_spawnable */
+    .is_locked          = false,                /* is_locked */
+    .room_configuration = {0},                  /* in room_configuration */
+    .north_door         = default_hitbox(),     /* north_door hitbox */
+    .south_door         = default_hitbox(),     /* south_door hitbox */
+    .east_door          = default_hitbox(),     /* east_door hitbox */
+    .west_door          = default_hitbox(),     /* west_door hitbox */
+    .m_handler          = default_mob_handler() /* mob handler */
   };
   return room;
 }
@@ -61,7 +61,8 @@ Room generate_room(int row_pos, int col_pos, char image_path[IMAGE_PATH_SIZE]) {
       .north_door     = default_hitbox(),
       .south_door     = default_hitbox(),
       .east_door      = default_hitbox(),
-      .west_door      = default_hitbox()
+      .west_door      = default_hitbox(),
+      .m_handler      = default_mob_handler()
     };
 
     /* generate id as row-col, always set to be 3 chars on each side of the dash */
@@ -280,34 +281,41 @@ void distr_attribute(Floor* f, int amount, ROOM_TYPE type) {
  *******************************************************************************
 */
 int load_room(Room* r) {
-  int status = ERROR;
-  MOB_HANDLER handler = default_mob_handler();
   if(r->is_initialized && !r->is_loaded) {
     /* load in graphics for room */
     r->map = al_load_bitmap(r->path_to_map_image);
     r->door = al_load_bitmap("../assets/door.png");
     if(!r->map || !r->door) {
         printf("couldn't load room map image.\n");
-        return status;
+        return ERROR;
     }
     /* Spawn in Mobs and other things based on room type */
-    switch(r->type){
+    printf("initializing mob handlers\n");
+    /*
+    switch(r->type) {
       case R_BASIC:
-        break;
-      case R_SHOP:
+        //initialize_handler(&r->m_handler, 100);
         break;
       case R_CHALLENGE:
+        //initialize_handler(&r->m_handler, 100);
         break;
+      case R_START:
+        //initialize_handler(&r->m_handler, 100);
       default:
         break;
     }
-
+    */
+/*
+    if(r->is_spawnable && r->m_handler.is_initialized) {
+      spawn_mobs(&r->m_handler, r->width, r->height, 1);
+    }
+*/
     r->is_loaded = true;
     printf("Loaded Room %s\n", r->id);
     return OK;
   } else {
     printf("Room %s load error: Initialization Status: %d, Load Status: %d\n", r->id, r->is_initialized, r->is_loaded);
-    return status;
+    return ERROR;
   }
 }
 
@@ -399,14 +407,17 @@ void generate_floor(Floor* f, int floor_num, int init_row, int init_col) {
    */
   distr_attribute(f, rng_random_int(1, f->number+1), R_SHOP);
   distr_attribute(f, rng_random_int(0, f->number), R_CHALLENGE);
+  printf("Generated Floor %d\n",f->number);
 }
 
-Room* update_dungeon_state(Floor* floor, Room* room, Mob* player, int num_active_mobs, bool* room_changed) {
+Room* update_dungeon_state(Floor* floor, Room* room, Mob* player, bool* room_changed) {
   /*
   * No mobs on screen, means we can start checking to see if we need to change
   * rooms.
   */
-  if(num_active_mobs == 0) {
+  //update_all_active_mobs(&room->m_handler, room->width, room->height);
+
+  if(room->m_handler.mob_count <= 0) {
     room->is_locked    = false;
     room->is_spawnable = false;
     Room* new_room = change_rooms(floor->map, room, player);
@@ -427,13 +438,18 @@ Room* update_dungeon_state(Floor* floor, Room* room, Mob* player, int num_active
   return room;
 }
 
-void show_room(Room* r) {
+void draw_room(Room* r, double delta_time) {
   if(!r->is_loaded) {
     printf("(terrain.c): Trying to display unloaded room: %s.\n", r->id);
     exit(1);
   }
   al_draw_bitmap(r->map, 0, 0, 0);
 
+/*
+  if(r->is_initialized) {
+    draw_all_active_mobs(&r->m_handler, delta_time);
+  }
+*/
   /* draw doors of the room as well in order: N, S, E, W */
   if(!r->is_locked) {
     if(r->room_configuration[0] == 1) {
