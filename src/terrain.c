@@ -12,6 +12,7 @@
 
 #include "terrain.h"
 #include "random.h"
+#include "mob_handler.h"
 
 #define MIN_SUBGRAPH_SIZE 2
 
@@ -236,28 +237,23 @@ Room bsp_step(Room map[MAX_ROWS][MAX_COLS],
 }
 
 /*
-* Distribute the different types of possible floor attributes across the
-* initialized rooms.
+* Randomly distribute a room attribute type across a generated floor.
 */
-void distr_attributes(Floor* f, int amount, ROOM_TYPE type) {
+void distr_attribute(Floor* f, int amount, ROOM_TYPE type) {
   int pos = 0;
   typedef struct coord{
     int row;
     int col;
   } Coord;
-  Coord available_room[MAX_ROWS * MAX_COLS];
-  int available_row[MAX_ROWS * MAX_COLS] = {0};
-  int available_col[MAX_COLS * MAX_COLS] = {0};
+  Coord available_coords[MAX_ROWS * MAX_COLS] = {{0,0}};
   int total = 0;
 
   //Populate list of available (rows/cols)
   for(int i = 0; i < MAX_ROWS; i++) {
     for(int j = 0; j < MAX_COLS; j++) {
         if(f->map[i][j].type == R_BASIC) {
-          //available_room[total].row = i;
-          //available_room[total].col = j;
-          available_row[total] = i;
-          available_col[total] = j;
+          available_coords[total].row = i;
+          available_coords[total].col = j;
           total++;
         }
     }
@@ -267,12 +263,11 @@ void distr_attributes(Floor* f, int amount, ROOM_TYPE type) {
     //select which room to distribute
 
     pos = rng_random_int(0, total-1);
-    f->map[available_row[pos]][available_col[pos]].type = type;
+    f->map[available_coords[pos].row][available_coords[pos].col].type = type;
 
     for(int i = 0; i < total-2; i++) {
       if(i >= pos) {
-        available_row[i] = available_row[i+1];
-        available_col[i] = available_col[i+1];
+        available_coords[i] = available_coords[i+1];
       }
     }
     total-=1;
@@ -285,19 +280,34 @@ void distr_attributes(Floor* f, int amount, ROOM_TYPE type) {
  *******************************************************************************
 */
 int load_room(Room* r) {
+  int status = ERROR;
+  MOB_HANDLER handler = default_mob_handler();
   if(r->is_initialized && !r->is_loaded) {
+    /* load in graphics for room */
     r->map = al_load_bitmap(r->path_to_map_image);
     r->door = al_load_bitmap("../assets/door.png");
     if(!r->map || !r->door) {
         printf("couldn't load room map image.\n");
-        return ERROR;
+        return status;
     }
+    /* Spawn in Mobs and other things based on room type */
+    switch(r->type){
+      case R_BASIC:
+        break;
+      case R_SHOP:
+        break;
+      case R_CHALLENGE:
+        break;
+      default:
+        break;
+    }
+
     r->is_loaded = true;
     printf("Loaded Room %s\n", r->id);
     return OK;
   } else {
     printf("Room %s load error: Initialization Status: %d, Load Status: %d\n", r->id, r->is_initialized, r->is_loaded);
-    return ERROR;
+    return status;
   }
 }
 
@@ -379,16 +389,16 @@ void generate_floor(Floor* f, int floor_num, int init_row, int init_col) {
 
   /* Once the floor layout is generated, Need to populate it with...stuff */
   /* ALWAYS generate 1 key and 1 exit per floor */
-  distr_attributes(f, 1, R_KEY);
-  distr_attributes(f, 1, R_EXIT);
+  distr_attribute(f, 1, R_KEY);
+  distr_attribute(f, 1, R_EXIT);
   /*
    * TODO: figure out a better method of calculating how many shops/challenge
    * rooms to generate, here are some thoughts:
    *  1. purely based off floor number rand(1, floor_num)
    *  2. Based off the total number of available rooms on the floor
    */
-  distr_attributes(f, rng_random_int(1, f->number+1), R_SHOP);
-  distr_attributes(f, rng_random_int(0, f->number), R_CHALLENGE);
+  distr_attribute(f, rng_random_int(1, f->number+1), R_SHOP);
+  distr_attribute(f, rng_random_int(0, f->number), R_CHALLENGE);
 }
 
 Room* update_dungeon_state(Floor* floor, Room* room, Mob* player, int num_active_mobs, bool* room_changed) {
