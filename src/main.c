@@ -110,11 +110,6 @@ int main(int argc, char** argv) {
         return ERROR;
     }
 
-    /* Testing some Handler Action! */
-    //MOB_HANDLER mob_manager = default_mob_handler();
-    //initialize_handler(&mob_manager, 20);
-    //spawn_mobs(&mob_manager, current_room->width, current_room->height, 10);
-    //printf("Mob Handler mob count: %d\n", mob_manager.mob_count);
     bool room_changed = false;
 
     /* Projectile Testing */
@@ -147,21 +142,15 @@ int main(int argc, char** argv) {
                 fps = 1.0 / delta_time;
                 old_time = new_time;
 
-                /* Spawn new mobs if need be */
-                /*
-                if(room_changed && current_room->is_spawnable) {
-                    spawn_mobs(&mob_manager, current_room->width, current_room->height, 10);
-                }
-                */
                 /* Update Player */
                 p.update(key, &p, current_room->width, current_room->height);
 
                 /* Update Projectile */
                 update_projectile(&bullet);
 
-                for(int i = 0; i < current_room->m_handler.local_max_mobs; i++) {
-                    if(is_collision(&bullet.hb, &current_room->m_handler.mobs[i].hb)) {
-                        current_room->m_handler.mobs[i].current_health -= bullet.damage;
+                for(int i = 0; i < current_room->m_handler_p->local_max_mobs; i++) {
+                    if(is_collision(&bullet.hb, &current_room->m_handler_p->mobs[i].hb)) {
+                        current_room->m_handler_p->mobs[i].current_health -= bullet.damage;
                         bullet.live = false;
                         break;
                     }
@@ -206,7 +195,7 @@ int main(int argc, char** argv) {
 
                 /* K kill all mobs in the room */
                 if(key[ALLEGRO_KEY_K]) {
-                    reset_handler(&current_room->m_handler);
+                    reset_handler(current_room->m_handler_p);
                     //p.current_health -= 10;
                 }
                 if(key[ALLEGRO_KEY_H]) {

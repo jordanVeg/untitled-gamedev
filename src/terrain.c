@@ -35,10 +35,16 @@ Room default_room() {
     .south_door         = default_hitbox(),     /* south_door hitbox */
     .east_door          = default_hitbox(),     /* east_door hitbox */
     .west_door          = default_hitbox(),     /* west_door hitbox */
-    .m_handler          = default_mob_handler() /* mob handler */
+    .m_handler_p        = NULL                  /* mob handler pointer */
   };
   return room;
 }
+/*
+ *******************************************************************************
+ * Internally Visible Variables
+ *******************************************************************************
+*/
+Mob_Handler current_mh;
 
 /*
  *******************************************************************************
@@ -61,10 +67,15 @@ Room generate_room(int row_pos, int col_pos, char image_path[IMAGE_PATH_SIZE]) {
       .north_door     = default_hitbox(),
       .south_door     = default_hitbox(),
       .east_door      = default_hitbox(),
-      .west_door      = default_hitbox(),
-      .m_handler      = default_mob_handler()
+      .west_door      = default_hitbox()
     };
 
+    /*
+     * because there can only be one active mob handler anyways, we will
+     * use a reference to the statically allocated one, which will be reused.
+    */
+    current_mh = default_mob_handler();
+    r.m_handler_p = &current_mh;
     /* generate id as row-col, always set to be 3 chars on each side of the dash */
     snprintf(r.id, ID_SIZE, "%03d-%03d", r.row_pos, r.col_pos);
 
@@ -291,25 +302,22 @@ int load_room(Room* r) {
     }
     /* Spawn in Mobs and other things based on room type */
     printf("initializing mob handlers\n");
-    /*
+
     switch(r->type) {
       case R_BASIC:
-        //initialize_handler(&r->m_handler, 100);
+        initialize_handler(r->m_handler_p, 100);
         break;
       case R_CHALLENGE:
-        //initialize_handler(&r->m_handler, 100);
+        initialize_handler(r->m_handler_p, 100);
         break;
-      case R_START:
-        //initialize_handler(&r->m_handler, 100);
       default:
         break;
     }
-    */
-/*
-    if(r->is_spawnable && r->m_handler.is_initialized) {
-      spawn_mobs(&r->m_handler, r->width, r->height, 1);
+
+    if(r->is_spawnable && r->m_handler_p->is_initialized) {
+      spawn_mobs(r->m_handler_p, r->width, r->height, 1);
     }
-*/
+
     r->is_loaded = true;
     printf("Loaded Room %s\n", r->id);
     return OK;
@@ -382,10 +390,10 @@ void generate_floor(Floor* f, int floor_num, int init_row, int init_col) {
 
   /* set floor number and floor "size" */
   f->number = floor_num;
-  f->start_row = 0;
-  f->start_col = 0;
-  f->stop_row = MAX_ROWS-1;
-  f->stop_col = MAX_COLS-1;
+  f->start_row = constrain(0, MAX_ROWS, MAX_ROWS/2 - (4 - f->number));
+  f->start_col = constrain(0, MAX_COLS, MAX_COLS/2 - (4 - f->number));
+  f->stop_row = constrain(0, MAX_ROWS-1, MAX_ROWS/2 + (4 + f->number));
+  f->stop_col = constrain(0, MAX_COLS-1, MAX_COLS/2 + (4 + f->number));
   /*
   * TODO: For future implementations, I would like to scale how large the floor
   * can be. To do this I will need some way of altering inputs 5 and 7 to the
@@ -415,9 +423,9 @@ Room* update_dungeon_state(Floor* floor, Room* room, Mob* player, bool* room_cha
   * No mobs on screen, means we can start checking to see if we need to change
   * rooms.
   */
-  //update_all_active_mobs(&room->m_handler, room->width, room->height);
+  update_all_active_mobs(room->m_handler_p, room->width, room->height);
 
-  if(room->m_handler.mob_count <= 0) {
+  if(room->m_handler_p->mob_count <= 0) {
     room->is_locked    = false;
     room->is_spawnable = false;
     Room* new_room = change_rooms(floor->map, room, player);
@@ -445,11 +453,11 @@ void draw_room(Room* r, double delta_time) {
   }
   al_draw_bitmap(r->map, 0, 0, 0);
 
-/*
-  if(r->is_initialized) {
-    draw_all_active_mobs(&r->m_handler, delta_time);
+
+  if(r->m_handler_p->is_initialized) {
+    draw_all_active_mobs(r->m_handler_p, delta_time);
   }
-*/
+
   /* draw doors of the room as well in order: N, S, E, W */
   if(!r->is_locked) {
     if(r->room_configuration[0] == 1) {

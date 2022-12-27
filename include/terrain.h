@@ -15,9 +15,6 @@
 #define MAX_ROWS 20
 #define MAX_COLS 20
 
-#define NUM_ROWS 3
-#define NUM_COLS 3
-
 extern int floor_num;
 
 typedef enum room_type {
@@ -40,7 +37,7 @@ typedef struct room {
     bool is_initialized, is_loaded, is_spawnable, is_locked;
     int room_configuration[4];
     Hitbox north_door, south_door, east_door, west_door;
-    Mob_Handler m_handler;
+    Mob_Handler* m_handler_p;
 } Room;
 
 typedef struct floor {

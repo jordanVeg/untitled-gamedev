@@ -24,7 +24,7 @@ Rogue-lite, but you're a wizard....who can write their own spells!
     - [x] Hardcode basic 3x3 map for exploration and testing
     - [x] Basic Room Generation
         - [x] Hardcoded
-        - [x] Dynamic 
+        - [x] Dynamic
     - [x] Floor Generation
       - [x] Simple/Hardcoded
       - [x] Dynamic
@@ -36,7 +36,7 @@ Rogue-lite, but you're a wizard....who can write their own spells!
     - [ ] Attack Action
 - [x] Simple Enemy Creation
     - [x] Enemy Handler to manage on screen creatures
-    - [x] Spawning 
+    - [x] Spawning
     - [x] Dying
 - [ ] Simple Combat
     - [x] Projectile Creation
