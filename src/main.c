@@ -90,10 +90,11 @@ int main(int argc, char** argv) {
 
     /* Floor & room setup */
     Room* current_room;
+    int floor_number = 1;
     Floor f;
     int start_row = MAX_ROWS/2;
     int start_col = MAX_COLS/2;
-    generate_floor(&f, 1, start_row, start_col);
+    generate_floor(&f, floor_number, start_row, start_col);
 
     current_room = &f.map[start_row][start_col];
     int status = load_room(current_room);
@@ -201,6 +202,24 @@ int main(int argc, char** argv) {
                 if(key[ALLEGRO_KEY_H]) {
                     toggle_hitboxes();
                 }
+                /* Temp -- Move to next floor */
+                if(key[ALLEGRO_KEY_E]) {
+                  if(current_room->type == R_EXIT && f.key_found) {
+                    Floor new_floor;
+                    Room new_room;
+                    floor_number+=1;
+                    generate_floor(&new_floor, floor_number, current_room->row_pos, current_room->col_pos);
+                    /* Insert Loading Screen or spawning animation here */
+                    new_room = new_floor.map[current_room->row_pos][current_room->col_pos];
+                    load_room(&new_room);
+                    unload_room(current_room);
+                    current_room = &new_room;
+                    f = new_floor;
+                  }
+                  else if(current_room->type == R_KEY && !f.key_found) {
+                    f.key_found = true;
+                  }
+                }
                  break;
             case ALLEGRO_EVENT_KEY_UP:
                 key[event.keyboard.keycode] &= KEY_RELEASED;
@@ -218,11 +237,12 @@ int main(int argc, char** argv) {
             draw_room(current_room, delta_time);
             p.draw(&p, delta_time);
             draw_projectile(&bullet);
+            al_draw_textf(font, al_map_rgb(0, 0, 0), 0, dev_tool_pos * 0, 0, "key found: %d", f.key_found);
             if(show_dev_tools) {
-              al_draw_textf(font, al_map_rgb(0, 0, 0), 0, dev_tool_pos * 0, 0, "Player position. x: %d, y: %d", p.position[0], p.position[1]);
-              al_draw_textf(font, al_map_rgb(0, 0, 0), 0, dev_tool_pos * 1, 0, "Current Room: %s", current_room->id);
-              al_draw_textf(font, al_map_rgb(0, 0, 0), 0, dev_tool_pos * 2, 0, "FPS: %f", fps);
-              al_draw_textf(font, al_map_rgb(0, 0, 0), 0, dev_tool_pos * 3, 0, "Mouse Position: %d, %d", mouseX, mouseY);
+              al_draw_textf(font, al_map_rgb(0, 0, 0), 0, dev_tool_pos * 1, 0, "Player position. x: %d, y: %d", p.position[0], p.position[1]);
+              al_draw_textf(font, al_map_rgb(0, 0, 0), 0, dev_tool_pos * 2, 0, "Current Room: %d - %s", f.number, current_room->id);
+              al_draw_textf(font, al_map_rgb(0, 0, 0), 0, dev_tool_pos * 3, 0, "FPS: %f", fps);
+              al_draw_textf(font, al_map_rgb(0, 0, 0), 0, dev_tool_pos * 4, 0, "Mouse Position: %d, %d", mouseX, mouseY);
             }
             al_flip_display();
 

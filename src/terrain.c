@@ -301,7 +301,6 @@ int load_room(Room* r) {
         return ERROR;
     }
     /* Spawn in Mobs and other things based on room type */
-    printf("initializing mob handlers\n");
 
     switch(r->type) {
       case R_BASIC:
@@ -311,6 +310,7 @@ int load_room(Room* r) {
         initialize_handler(r->m_handler_p, 100);
         break;
       default:
+        current_mh = default_mob_handler();
         break;
     }
 
@@ -389,11 +389,13 @@ void generate_floor(Floor* f, int floor_num, int init_row, int init_col) {
   }
 
   /* set floor number and floor "size" */
+  f->key_found = false;
   f->number = floor_num;
-  f->start_row = constrain(0, MAX_ROWS, MAX_ROWS/2 - (4 - f->number));
-  f->start_col = constrain(0, MAX_COLS, MAX_COLS/2 - (4 - f->number));
+  f->start_row = constrain(0, MAX_ROWS, MAX_ROWS/2 - (4 + f->number));
+  f->start_col = constrain(0, MAX_COLS, MAX_COLS/2 - (4 + f->number));
   f->stop_row = constrain(0, MAX_ROWS-1, MAX_ROWS/2 + (4 + f->number));
   f->stop_col = constrain(0, MAX_COLS-1, MAX_COLS/2 + (4 + f->number));
+  printf("floor generation bounds: rows %d -> %d, cols %d -> %d\n",f->start_row, f->stop_row, f->start_col, f->stop_col);
   /*
   * TODO: For future implementations, I would like to scale how large the floor
   * can be. To do this I will need some way of altering inputs 5 and 7 to the
@@ -416,6 +418,7 @@ void generate_floor(Floor* f, int floor_num, int init_row, int init_col) {
   distr_attribute(f, rng_random_int(1, f->number+1), R_SHOP);
   distr_attribute(f, rng_random_int(0, f->number), R_CHALLENGE);
   printf("Generated Floor %d\n",f->number);
+  print_floor(f);
 }
 
 Room* update_dungeon_state(Floor* floor, Room* room, Mob* player, bool* room_changed) {

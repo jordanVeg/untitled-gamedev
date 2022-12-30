@@ -46,6 +46,7 @@ typedef struct floor {
   int stop_row;
   int start_col;
   int stop_col;
+  bool key_found;
   Room map[MAX_ROWS][MAX_COLS];
 } Floor;
 
