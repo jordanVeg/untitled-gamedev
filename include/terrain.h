@@ -60,7 +60,7 @@ void draw_room(Room* r, double delta_time);
 
 void generate_floor(Floor* f, int floor_num, int init_row, int init_col);
 
-Room* update_dungeon_state(Floor* floor, Room* room, Mob* player, bool* room_changed);
+Room* update_dungeon_state(Floor* floor, Room* room, Mob* player);
 /* Externally visible for debugging purposes*/
 void print_floor(Floor* f);
 

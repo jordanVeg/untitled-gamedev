@@ -322,7 +322,7 @@ int load_room(Room* r) {
     printf("Loaded Room %s\n", r->id);
     return OK;
   } else {
-    printf("Room %s load error: Initialization Status: %d, Load Status: %d\n", r->id, r->is_initialized, r->is_loaded);
+      printf("Room %s load error: Initialization Status: %d, Load Status: %d\n", r->id, r->is_initialized, r->is_loaded);
     return ERROR;
   }
 }
@@ -395,12 +395,7 @@ void generate_floor(Floor* f, int floor_num, int init_row, int init_col) {
   f->start_col = constrain(0, MAX_COLS, MAX_COLS/2 - (4 + f->number));
   f->stop_row = constrain(0, MAX_ROWS-1, MAX_ROWS/2 + (4 + f->number));
   f->stop_col = constrain(0, MAX_COLS-1, MAX_COLS/2 + (4 + f->number));
-  printf("floor generation bounds: rows %d -> %d, cols %d -> %d\n",f->start_row, f->stop_row, f->start_col, f->stop_col);
-  /*
-  * TODO: For future implementations, I would like to scale how large the floor
-  * can be. To do this I will need some way of altering inputs 5 and 7 to the
-  * bsp step algorithm, which should increased based on floor number.
-  */
+
   bsp_step(f->map, init_row, init_col, f->start_row, f->stop_row, f->start_col, f->stop_col);
   //bsp_step(f->map, start_row, start_col, 5, MAX_ROWS-5, 5, MAX_COLS-5);
   link_rooms(f->map);
@@ -421,7 +416,7 @@ void generate_floor(Floor* f, int floor_num, int init_row, int init_col) {
   print_floor(f);
 }
 
-Room* update_dungeon_state(Floor* floor, Room* room, Mob* player, bool* room_changed) {
+Room* update_dungeon_state(Floor* floor, Room* room, Mob* player) {
   /*
   * No mobs on screen, means we can start checking to see if we need to change
   * rooms.
@@ -434,7 +429,6 @@ Room* update_dungeon_state(Floor* floor, Room* room, Mob* player, bool* room_cha
     Room* new_room = change_rooms(floor->map, room, player);
     if(strcmp(new_room->id, room->id) != 0) {
       room = new_room;
-      *room_changed = true;
       print_floor(floor);
     }
   }
@@ -442,7 +436,6 @@ Room* update_dungeon_state(Floor* floor, Room* room, Mob* player, bool* room_cha
     if(room->is_spawnable) {
       room->is_locked = true;
     }
-    *room_changed = false;
   }
   /* TODO: This is where I will probably unlock the door to the next floor */
 
