@@ -70,9 +70,42 @@ Room generate_room(int row_pos, int col_pos, Room_Type type) {
 
     /* Generate Texture Map */
     /* TODO: smarter algorithm for generating different size/shaped rooms. */
+    int selected_texture = 0;
     for(int i = 0; i < MAX_ROOM_WIDTH_IDX; i++) {
       for(int j = 0; j < MAX_ROOM_HEIGHT_IDX; j++) {
-        r.texture_map[i][j] = rng_random_int(0,2);
+        if (i == 0) {
+          switch(j) {
+            case 0:
+              selected_texture = 8;
+              break;
+            case MAX_ROOM_HEIGHT_IDX-1:
+              selected_texture = 10;
+              break;
+            default:
+              selected_texture = 4;
+              break;
+          }
+        } else if (i == MAX_ROOM_WIDTH_IDX-1) {
+          switch(j) {
+            case 0:
+              selected_texture = 9;
+              break;
+            case MAX_ROOM_HEIGHT_IDX-1:
+              selected_texture = 11;
+              break;
+            default:
+              selected_texture = 5;
+              break;
+          }
+        } else if (j == 0) {
+          selected_texture = 6;
+        } else if (j == MAX_ROOM_HEIGHT_IDX-1) {
+          selected_texture = 7;
+        } else {
+          selected_texture = rng_percent_chance(0.75)? 3 : rng_random_int(0,2);
+        }
+
+        r.texture_map[i][j] = selected_texture;
       }
     }
     /*
@@ -316,7 +349,7 @@ int load_room(Room* r) {
     }
 
     r->is_loaded = true;
-    printf("Loaded Room %s\n", r->id);
+    //printf("Loaded Room %s\n", r->id);
     return OK;
   } else {
       printf("Room %s load error: Initialization Status: %d, Load Status: %d\n", r->id, r->is_initialized, r->is_loaded);
@@ -417,7 +450,7 @@ void generate_floor(Floor* f, int floor_num, int init_row, int init_col) {
    *  2. Based off the total number of available rooms on the floor
    */
   distr_attribute(f, rng_random_int(1, f->number+1), R_SHOP);
-  distr_attribute(f, rng_random_int(0, f->number), R_CHALLENGE);
+  distr_attribute(f, rng_random_int(1, f->number), R_CHALLENGE);
   printf("Generated Floor %d\n",f->number);
   print_floor(f);
 }
@@ -451,7 +484,7 @@ Room* update_dungeon_state(Floor* floor, Room* room, Mob* player) {
     Room* new_room = change_rooms(floor->map, room, player);
     if(strcmp(new_room->id, room->id) != 0) {
       room = new_room;
-      print_floor(floor);
+      //print_floor(floor);
     }
   }
   else {
@@ -478,8 +511,8 @@ void draw_room(Room* r, ALLEGRO_BITMAP* room_texture_p, double delta_time) {
   for(int i = 0; i < MAX_ROOM_WIDTH_IDX; i++) {
     for(int j = 0; j < MAX_ROOM_HEIGHT_IDX; j++) {
       al_draw_bitmap_region(room_texture_p,
-                            r->texture_map[i][j]*PX_PER_TILE,
-                            0,
+                            (r->texture_map[i][j]%4)*PX_PER_TILE,
+                            floor(r->texture_map[i][j]/4)*PX_PER_TILE,
                             PX_PER_TILE,
                             PX_PER_TILE,
                             i * PX_PER_TILE,

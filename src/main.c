@@ -166,6 +166,7 @@ int main(int argc, char** argv) {
                         // TODO: Free memory of everything --> dungeon, mobs, etc.
                         current_game_state = GS_MENU;
                         memset(key, 0, sizeof(key));
+                        destroy_floor(&f);
                         printf("dead.\n");
                         break;
                     }
@@ -316,10 +317,50 @@ int main(int argc, char** argv) {
                 draw_projectile(&bullet2);
                 al_draw_textf(font, al_map_rgb(0, 0, 0), 0, dev_tool_pos * 0, 0, "key found: %d", f.key_found);
                 if(show_dev_tools) {
-                al_draw_textf(font, al_map_rgb(0, 0, 0), 0, dev_tool_pos * 1, 0, "Player position. x: %d, y: %d", p.position[0], p.position[1]);
-                al_draw_textf(font, al_map_rgb(0, 0, 0), 0, dev_tool_pos * 2, 0, "Current Room: %d - %s", f.number, current_room->id);
-                al_draw_textf(font, al_map_rgb(0, 0, 0), 0, dev_tool_pos * 3, 0, "FPS: %f", fps);
-                al_draw_textf(font, al_map_rgb(0, 0, 0), 0, dev_tool_pos * 4, 0, "Mouse Position: %d, %d", mouseX, mouseY);
+                    al_draw_textf(font, al_map_rgb(0, 0, 0), 0, dev_tool_pos * 1, 0, "Player position. x: %d, y: %d", p.position[0], p.position[1]);
+                    al_draw_textf(font, al_map_rgb(0, 0, 0), 0, dev_tool_pos * 2, 0, "Current Room: %d - %s", f.number, current_room->id);
+                    al_draw_textf(font, al_map_rgb(0, 0, 0), 0, dev_tool_pos * 3, 0, "FPS: %f", fps);
+                    al_draw_textf(font, al_map_rgb(0, 0, 0), 0, dev_tool_pos * 4, 0, "Mouse Position: %d, %d", mouseX, mouseY);
+                }
+                /* Draw Minimap */
+                float box_len = 10;
+                float scl = 1.1;
+                float startx = SCREEN_WIDTH - ((scl * box_len) * MAX_ROWS);
+                float starty = 0;
+                ALLEGRO_COLOR c;
+                for(int i = 0; i < MAX_ROWS; i++) {
+                    for(int j = 0; j < MAX_COLS; j++) {
+                        if(f.map[i][j].is_initialized) {
+                            if(f.map[i][j].is_loaded) {
+                                c = al_map_rgb(240, 201, 31);
+                            } else {
+                                switch(f.map[i][j].type) {
+                                    case R_CHALLENGE:
+                                        c = al_map_rgb(128, 10, 100);
+                                        break;
+                                    case R_EXIT:
+                                        c = al_map_rgb(255, 50, 50);
+                                        break;
+                                    case R_KEY:
+                                        c = al_map_rgb(50, 255, 50);
+                                        break;
+                                    case R_SHOP:
+                                        c = al_map_rgb(25, 2, 104);
+                                        break;
+                                    default:
+                                        c = al_map_rgb(128, 128, 128);
+                                        break;
+                                }
+                            }
+                            int x1 = startx + (j * scl * box_len);
+                            int y1 = starty + (i * scl * box_len);
+                            al_draw_filled_rectangle( x1,
+                                                      y1,
+                                                      x1 + box_len,
+                                                      y1 + box_len,
+                                                      c);
+                        }
+                    }
                 }
             }
             else if(current_game_state == GS_MENU) {
