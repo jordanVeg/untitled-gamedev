@@ -42,25 +42,28 @@ void update_player(unsigned char key[], Mob* p, int max_px, int max_py) {
     }
     else {
         /* Update speed based on Button press */
-        p->current_state = IDLE;
         if(key[ALLEGRO_KEY_W]) {
             p->vel_y = -p->speed;
-            p->current_state = RUNNING;
         }
         if(key[ALLEGRO_KEY_S]) {
             p->vel_y = p->speed;
-            p->current_state = RUNNING;
         }
         if(key[ALLEGRO_KEY_A]) {
             p->vel_x = -p->speed;
-            p->current_state = RUNNING;
             p->dir = 0;
         }
         if(key[ALLEGRO_KEY_D]) {
             p->vel_x = p->speed;
-            p->current_state = RUNNING;
             p->dir = 1;
         }
+
+        /* Update state for animation purposes*/
+        if(p->vel_x != 0 || p->vel_y != 0) {
+            p->current_state = RUNNING;
+        } else {
+            p->current_state = IDLE;
+        }
+
         /* Update position based on speed */
         p->position[0] = constrain(0, max_px - p->width, (p->position[0] + p->vel_x));
         p->position[1] = constrain(0, max_py - p->height,(p->position[1] + p->vel_y));
@@ -69,7 +72,7 @@ void update_player(unsigned char key[], Mob* p, int max_px, int max_py) {
         /* Reset velocity to 0, so that the player doesnt move forever */
         p->vel_x = 0;
         p->vel_y = 0;
-    }  
+    }
 }
 
 void update_slime(unsigned char key[], Mob* slime, int max_px, int max_py) {
@@ -78,10 +81,10 @@ void update_slime(unsigned char key[], Mob* slime, int max_px, int max_py) {
     }
     else {
         slime->vel_x = (slime->dir == 0)? slime->speed : -slime->speed;
-        
+
         if(slime->position[0] <= 0) slime->dir = 0;
         if((slime->position[0] + slime->width) >= max_px) slime->dir = 1;
-        
+
         slime->position[0] = constrain(0, max_px - slime->width, (slime->position[0] + slime->vel_x));
     }
     update_hitbox_position(&slime->hb, slime->position[0], slime->position[1]);
@@ -114,11 +117,11 @@ void draw_mob(Mob* m, double delta_time) {
     }
     int flip_flag = m->dir == 0 ? 0 : ALLEGRO_FLIP_HORIZONTAL;
     al_draw_bitmap_region(m->sprite, sourceX, sourceY, m->width, m->height, m->position[0], m->position[1], flip_flag);
-    /* 
+    /*
     *  Im gonna try to implement a health bar because im too lazy to import a
-    *  font. This actually works pretty well. 
+    *  font. This actually works pretty well.
     *  TODO: make this a "health bar" function or something, maybe I can
-    *  generalize it to represent other values as well? 
+    *  generalize it to represent other values as well?
     */
     if(m->current_health != m->max_health) {
         al_draw_rectangle(m->position[0], m->position[1] - 10, m->position[0] + m->width, m->position[1] - 5, al_map_rgb(0, 100, 0), 5);
@@ -164,7 +167,7 @@ Mob initialize_mob(MOB_TYPE type, int id, int start_x, int start_y) {
             m.max_health = 30;
             m.sprite = al_load_bitmap("../assets/slime.png");
             m.update = update_slime;
-            m.draw   = draw_mob;   
+            m.draw   = draw_mob;
             break;
         default:
             m.width  = 0;
@@ -177,7 +180,7 @@ Mob initialize_mob(MOB_TYPE type, int id, int start_x, int start_y) {
             break;
     }
     m.current_health = m.max_health;
-    
+
     if(!m.sprite && type != DEFAULT) {
         printf("Error loading sprite!\n");
     }

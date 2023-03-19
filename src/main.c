@@ -115,7 +115,11 @@ int main(int argc, char** argv) {
     Game_State current_game_state = GS_MENU;
 
     /* Projectile Testing */
-    PROJECTILE bullet = initialize_projectile();
+    Projectile bullet1 = initialize_projectile(5, 10);
+
+    Projectile bullet2 = initialize_projectile(10, 20);
+    //Projectile live_bullets[10] = {initialize_projectile(0,0)};
+
 
     /* Camera Setup */
     float cameraPosition[2] = {0, 0};
@@ -149,6 +153,13 @@ int main(int argc, char** argv) {
                     /* Update Player */
                     p.update(key, &p, current_room->width, current_room->height);
 
+                    /* Hitbox collisions -- Needs to be updated, very temporary */
+                    for(int i = 0; i < current_room->m_handler_p->local_max_mobs; i++) {
+                        if(is_collision(&p.hb, &current_room->m_handler_p->mobs[i].hb)){
+                            p.current_health -= 10;
+                        }
+                    }
+
                     if(p.current_state == DEAD) {
                         // STRETCH: End Run screen with stats.
                         // clear all keyboard inputs, change game state to menu
@@ -160,13 +171,19 @@ int main(int argc, char** argv) {
                     }
 
                     /* Update Projectile */
-                    update_projectile(&bullet);
+                    update_projectile(&bullet1);
+                    update_projectile(&bullet2);
 
                     /* Check for bullet collisions */
                     for(int i = 0; i < current_room->m_handler_p->local_max_mobs; i++) {
-                        if(is_collision(&bullet.hb, &current_room->m_handler_p->mobs[i].hb)) {
-                            current_room->m_handler_p->mobs[i].current_health -= bullet.damage;
-                            bullet.live = false;
+                        if(is_collision(&bullet1.hb, &current_room->m_handler_p->mobs[i].hb)) {
+                            current_room->m_handler_p->mobs[i].current_health -= bullet1.damage;
+                            bullet1.live = false;
+                            break;
+                        }
+                        if(is_collision(&bullet2.hb, &current_room->m_handler_p->mobs[i].hb)) {
+                            current_room->m_handler_p->mobs[i].current_health -= bullet2.damage;
+                            bullet2.live = false;
                             break;
                         }
                     }
@@ -201,7 +218,10 @@ int main(int argc, char** argv) {
                 case ALLEGRO_EVENT_MOUSE_BUTTON_DOWN:
                     /* Fire Bullet */
                     if(event.mouse.button == 1) {
-                        fire_projectile(&bullet, p.position[0] + p.width/2, p.position[1] + p.height/2, mouseX, mouseY, 50);
+                        fire_projectile(&bullet1, p.position[0] + p.width/2, p.position[1] + p.height/2, mouseX, mouseY, 50);
+                    }
+                    if(event.mouse.button == 2) {
+                        fire_projectile(&bullet2, p.position[0] + p.width/2, p.position[1] + p.height/2, mouseX, mouseY, 10);
                     }
                     break;
                 case ALLEGRO_EVENT_MOUSE_AXES:
@@ -233,6 +253,7 @@ int main(int argc, char** argv) {
                             load_room(&new_room);
                             unload_room(current_room);
                             current_room = &new_room;
+                            destroy_floor(&f);
                             f = new_floor;
                         }
                         else if(current_room->type == R_KEY && !f.key_found) {
@@ -289,9 +310,10 @@ int main(int argc, char** argv) {
         if(redraw && al_is_event_queue_empty(queue)) {
             al_clear_to_color(al_map_rgb(0, 0, 0));
             if(current_game_state == GS_RUNNING) {
-                draw_room(current_room, delta_time);
+                draw_room(current_room, f.texture_p, delta_time);
                 p.draw(&p, delta_time);
-                draw_projectile(&bullet);
+                draw_projectile(&bullet1);
+                draw_projectile(&bullet2);
                 al_draw_textf(font, al_map_rgb(0, 0, 0), 0, dev_tool_pos * 0, 0, "key found: %d", f.key_found);
                 if(show_dev_tools) {
                 al_draw_textf(font, al_map_rgb(0, 0, 0), 0, dev_tool_pos * 1, 0, "Player position. x: %d, y: %d", p.position[0], p.position[1]);

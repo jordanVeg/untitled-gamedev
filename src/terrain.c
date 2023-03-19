@@ -22,8 +22,7 @@ Room default_room() {
     .row_pos            = -1,                   /* row position */
     .col_pos            = -1,                   /* column position */
     .id                 = {""},                 /* id string */
-    .path_to_map_image  = {""},                 /* background image path string */
-    .map                = NULL,                 /* ALLEGRO_BITMAP* map */
+    .texture_map        = {{0}},                /* texture map */
     .door               = NULL,                 /* ALLEGRO_BITMAP* door */
     .type               = R_DEFAULT,            /* room type */
     .is_initialized     = false,                /* is_initialized */
@@ -51,15 +50,14 @@ Mob_Handler current_mh;
  * Internally Visible Functions
  *******************************************************************************
 */
-Room generate_room(int row_pos, int col_pos, char image_path[IMAGE_PATH_SIZE]) {
+Room generate_room(int row_pos, int col_pos, Room_Type type) {
     Room r = {
       .width          = 1280, //SCREEN_WIDTH,
       .height         = 960, //SCREEN_HEIGHT,
       .row_pos        = row_pos,
       .col_pos        = col_pos,
-      .map            = NULL,
       .door           = NULL,
-      .type           = R_BASIC,
+      .type           = type,
       .is_initialized = true,
       .is_loaded      = false,
       .is_spawnable   = true,
@@ -70,6 +68,13 @@ Room generate_room(int row_pos, int col_pos, char image_path[IMAGE_PATH_SIZE]) {
       .west_door      = default_hitbox()
     };
 
+    /* Generate Texture Map */
+    /* TODO: smarter algorithm for generating different size/shaped rooms. */
+    for(int i = 0; i < MAX_ROOM_WIDTH_IDX; i++) {
+      for(int j = 0; j < MAX_ROOM_HEIGHT_IDX; j++) {
+        r.texture_map[i][j] = rng_random_int(0,2);
+      }
+    }
     /*
      * because there can only be one active mob handler anyways, we will
      * use a reference to the statically allocated one, which will be reused.
@@ -78,9 +83,6 @@ Room generate_room(int row_pos, int col_pos, char image_path[IMAGE_PATH_SIZE]) {
     r.m_handler_p = &current_mh;
     /* generate id as row-col, always set to be 3 chars on each side of the dash */
     snprintf(r.id, ID_SIZE, "%03d-%03d", r.row_pos, r.col_pos);
-
-    /* copy background image path */
-    strncpy(r.path_to_map_image, image_path, IMAGE_PATH_SIZE);
 
     return r;
 }
@@ -135,7 +137,7 @@ int generate_path_between_rooms(Room map[MAX_ROWS][MAX_COLS], int r1, int c1, in
   }
   int current_row = r1;
   int current_col = c1;
-  char room_path[IMAGE_PATH_SIZE];
+
   /* Start with a 50% chance to move in the x or y direction to try to avoid row/col bias */
   double chance = 0.5;
   while((current_row != r2) || (current_col != c2)) {
@@ -146,8 +148,7 @@ int generate_path_between_rooms(Room map[MAX_ROWS][MAX_COLS], int r1, int c1, in
 
       /* Generate room if it is not already initialized */
       if(!map[current_row][current_col].is_initialized) {
-        snprintf(room_path, sizeof(room_path), "../assets/forest_%d.png", (current_row+current_col)%9+1);
-        map[current_row][current_col] = generate_room(current_row, current_col, room_path);
+        map[current_row][current_col] = generate_room(current_row, current_col, R_HALLWAY);
       }
     }
     else if(current_col != c2) {
@@ -157,8 +158,7 @@ int generate_path_between_rooms(Room map[MAX_ROWS][MAX_COLS], int r1, int c1, in
 
       /* Generate room if it is not already initialized */
       if(!map[current_row][current_col].is_initialized) {
-        snprintf(room_path, sizeof(room_path), "../assets/forest_%d.png", (current_row+current_col)%9+1);
-        map[current_row][current_col] = generate_room(current_row, current_col, room_path);
+        map[current_row][current_col] = generate_room(current_row, current_col, R_HALLWAY);
       }
       /* Set Chance to be 100% as to not waste loops. */
       if(current_col == c2) chance = 1;
@@ -204,9 +204,7 @@ Room bsp_step(Room map[MAX_ROWS][MAX_COLS],
     /* Check if room is initialized, if not, generate new room.*/
     if(!map[row_pos][col_pos].is_initialized) {
       Room r = default_room();
-      char room_path[IMAGE_PATH_SIZE];
-      snprintf(room_path, sizeof(room_path), "../assets/forest_%d.png", (row_pos+col_pos)%9+1);
-      r = generate_room(row_pos, col_pos, room_path);
+      r = generate_room(row_pos, col_pos, R_BASIC);
       map[row_pos][col_pos] = r;
     }
 
@@ -251,7 +249,7 @@ Room bsp_step(Room map[MAX_ROWS][MAX_COLS],
 /*
 * Randomly distribute a room attribute type across a generated floor.
 */
-void distr_attribute(Floor* f, int amount, ROOM_TYPE type) {
+void distr_attribute(Floor* f, int amount, Room_Type type) {
   int pos = 0;
   typedef struct coord{
     int row;
@@ -263,7 +261,7 @@ void distr_attribute(Floor* f, int amount, ROOM_TYPE type) {
   //Populate list of available (rows/cols)
   for(int i = 0; i < MAX_ROWS; i++) {
     for(int j = 0; j < MAX_COLS; j++) {
-        if(f->map[i][j].type == R_BASIC) {
+        if(f->map[i][j].type == R_BASIC || f->map[i][j].type == R_HALLWAY) {
           available_coords[total].row = i;
           available_coords[total].col = j;
           total++;
@@ -284,8 +282,8 @@ void distr_attribute(Floor* f, int amount, ROOM_TYPE type) {
     }
     total-=1;
   }
-  //Seem to be throwing some kind of error trying to return out of this loop...
 }
+
 /*
  *******************************************************************************
  * Externally Visible Functions
@@ -294,10 +292,9 @@ void distr_attribute(Floor* f, int amount, ROOM_TYPE type) {
 int load_room(Room* r) {
   if(r->is_initialized && !r->is_loaded) {
     /* load in graphics for room */
-    r->map = al_load_bitmap(r->path_to_map_image);
     r->door = al_load_bitmap("../assets/door.png");
-    if(!r->map || !r->door) {
-        printf("couldn't load room map image.\n");
+    if(!r->door) {
+        printf("(load_room): couldn't load door image.\n");
         return ERROR;
     }
     /* Spawn in Mobs and other things based on room type */
@@ -329,7 +326,6 @@ int load_room(Room* r) {
 
 int unload_room(Room* r) {
   if(r->is_loaded) {
-    al_destroy_bitmap(r->map);
     al_destroy_bitmap(r->door);
     r->is_loaded = false;
     return OK;
@@ -391,10 +387,20 @@ void generate_floor(Floor* f, int floor_num, int init_row, int init_col) {
   /* set floor number and floor "size" */
   f->key_found = false;
   f->number = floor_num;
+
+  switch(f->number){
+    default:
+      f->texture_p = al_load_bitmap("../assets/forest_texture.png");
+      break;
+  }
+  if(f->texture_p == NULL) {
+    printf("(generate_floor): ERROR loading floor texture sheet.\n");
+  }
+
   f->start_row = constrain(0, MAX_ROWS, MAX_ROWS/2 - (4 + f->number));
   f->start_col = constrain(0, MAX_COLS, MAX_COLS/2 - (4 + f->number));
-  f->stop_row = constrain(0, MAX_ROWS-1, MAX_ROWS/2 + (4 + f->number));
-  f->stop_col = constrain(0, MAX_COLS-1, MAX_COLS/2 + (4 + f->number));
+  f->stop_row  = constrain(0, MAX_ROWS-1, MAX_ROWS/2 + (4 + f->number));
+  f->stop_col  = constrain(0, MAX_COLS-1, MAX_COLS/2 + (4 + f->number));
 
   bsp_step(f->map, init_row, init_col, f->start_row, f->stop_row, f->start_col, f->stop_col);
   //bsp_step(f->map, start_row, start_col, 5, MAX_ROWS-5, 5, MAX_COLS-5);
@@ -416,6 +422,22 @@ void generate_floor(Floor* f, int floor_num, int init_row, int init_col) {
   print_floor(f);
 }
 
+/*
+* Destroy_Floor
+* ============
+* Remove any artifacts from a floor that is no longer being used.
+*/
+void destroy_floor(Floor* floor_p) {
+  al_destroy_bitmap(floor_p->texture_p);
+}
+
+/*
+* ====================
+* Update_Dungeon_State
+* ====================
+* Update all artifacts of the current dungeon state including mobs and room
+* changes.
+*/
 Room* update_dungeon_state(Floor* floor, Room* room, Mob* player) {
   /*
   * No mobs on screen, means we can start checking to see if we need to change
@@ -442,13 +464,29 @@ Room* update_dungeon_state(Floor* floor, Room* room, Mob* player) {
   return room;
 }
 
-void draw_room(Room* r, double delta_time) {
+void draw_room(Room* r, ALLEGRO_BITMAP* room_texture_p, double delta_time) {
   if(!r->is_loaded) {
-    printf("(terrain.c): Trying to display unloaded room: %s.\n", r->id);
+    printf("(draw_room): Trying to display unloaded room: %s.\n", r->id);
     exit(1);
   }
-  al_draw_bitmap(r->map, 0, 0, 0);
-
+  if(!room_texture_p) {
+    printf("(draw_room): Provided texture map not loaded.\n");
+    exit(1);
+  }
+  //al_draw_bitmap(r->map, 0, 0, 0);
+  /* draw tiles based on generated texture map */
+  for(int i = 0; i < MAX_ROOM_WIDTH_IDX; i++) {
+    for(int j = 0; j < MAX_ROOM_HEIGHT_IDX; j++) {
+      al_draw_bitmap_region(room_texture_p,
+                            r->texture_map[i][j]*PX_PER_TILE,
+                            0,
+                            PX_PER_TILE,
+                            PX_PER_TILE,
+                            i * PX_PER_TILE,
+                            j * PX_PER_TILE,
+                            0);
+    }
+  }
 
   if(r->m_handler_p->is_initialized) {
     draw_all_active_mobs(r->m_handler_p, delta_time);
@@ -493,6 +531,9 @@ void print_floor(Floor* f) {
           case R_EXIT:
             room_token = 'E';
             break;
+          case R_HALLWAY:
+            room_token = '-';
+            break;
           case R_KEY:
             room_token = 'K';
             break;
@@ -503,7 +544,7 @@ void print_floor(Floor* f) {
             room_token = 'O';
             break;
           default:
-            room_token = '-';
+            room_token = '?';
             break;
         }
       }

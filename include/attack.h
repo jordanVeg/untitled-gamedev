@@ -8,15 +8,15 @@ typedef struct projectile {
     double xspeed, yspeed;
     bool live;
     Hitbox hb;
-} PROJECTILE;
+} Projectile;
 
-PROJECTILE initialize_projectile();
+Projectile initialize_projectile(int r, int damage);
 
-void fire_projectile(PROJECTILE* bullet, int startx, int starty, int endx, int endy, int speed);
+void fire_projectile(Projectile* bullet, int startx, int starty, int endx, int endy, int speed);
 
-void update_projectile(PROJECTILE* bullet);
+void update_projectile(Projectile* bullet);
 
-void draw_projectile(PROJECTILE* bullet);
+void draw_projectile(Projectile* bullet);
 
 
 #endif
