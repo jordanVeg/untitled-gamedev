@@ -9,7 +9,8 @@
         "allegro_font.h": "c",
         "collisions.h": "c",
         "cmath": "c",
-        "algorithm": "c"
+        "algorithm": "c",
+        "allegro5.h": "c"
     },
     "C_Cpp.errorSquiggles": "Disabled"
 }

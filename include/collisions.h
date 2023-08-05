@@ -1,6 +1,8 @@
 #ifndef INCLUDE_COLLISIONS_H
 #define INCLUDE_COLLISIONS_H
 
+#include <allegro5/allegro5.h>
+
 typedef struct hitbox {
   int x, y, width, height;
 } Hitbox;
